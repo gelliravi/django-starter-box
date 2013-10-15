@@ -1,4 +1,84 @@
-*.log
+# Python
+
+*.py[cod]
+
+# images and media
+
+media/
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
 *.pot
-*.pyc
-local_settings.py
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+### Generic
+
+*.log
+*.sqlite?
+
+### Compiled binaries
+
+build/*
+
+*.class
+*.jar
+
+*.o
+*.bin
+*.a
+*.lib
+*.so
+*.out
+
+*.obj
+*.exe
+*.dll
+*.com
+
+### *nix OS / apps
+
+*.swp
+*~
+
+### Mac OS generated
+
+__MACOSX # folder
+*.DS_Store
+*.DS_Store?
+._*
+.Spotlight*
+.Trashes
+
+### Windows generated
+
+ehthumbs.db
+thumbs.db
+Thumbs.db
+
