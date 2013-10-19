@@ -18,11 +18,10 @@ def _ajax_json(error=None, data=None):
             'type':     error.__class__.__name__,
         }
 
+        # As security feature, we include more stuff only when it is AjaxError
         if isinstance(error, AjaxError):
             error_dict['message'] = str(error)             
-
-            if isinstance(error, InvalidParamError):
-                error_dict['data'] = error.errors
+            error_dict['data'] = error.data 
 
     return json_encode({'error': error_dict, 'data': data})
 
