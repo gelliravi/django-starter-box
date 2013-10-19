@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import ValidationError
+from django.utils.translation import ugettext as _
 
 from .utils import parse_iso_datetime
 
