@@ -10,7 +10,7 @@ DjAjax
 ------
 * Easily add AJAX functionalities to your Django app.
 * Seamless validation of AJAX params using Django forms.
-* Designed to be lightweight: no JavaScript requirements.
+* Designed to be lightweight.
 * Inspired by Dajaxice but this is ultra-lightweight and has built-in
   form validation.
 
@@ -43,7 +43,7 @@ if you want to do a `./manage.py test`.
 |------|----------|-----------------
 Python   | >= 2.7   | 2.7.3
 Django   | >= 1.5.1 | 1.5.1
-mysqlite | whatever Django supports | -
+sqlite   | whatever Django supports | -
 
 External Dependencies
 =====================
@@ -117,7 +117,7 @@ $.ajax({
     type: 'POST',
     headers: {
         // read more about CSRF : https://docs.djangoproject.com/en/1.5/ref/contrib/csrf/
-        'X-CSRFToken': '...''
+        'X-CSRFToken': '...'
     },
     data: {data: JSON.stringify({name: 'John', email: 'john@john.com', password: '123'})}
   }
