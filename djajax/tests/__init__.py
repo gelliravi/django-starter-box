@@ -72,6 +72,19 @@ class DjAjaxIntegrationTest(TestCase):
         self.assertTrue(result['error']['data']['param2'][0] != '')
         self.assertEqual(result['data'], None)
 
+    def test_create_account(self):
+        response = self.client.post(self.__class__.PREFIX + 'create_account')
+        result = json.loads(response.content)
+        self.assertEqual(result['error']['type'], 'EmailTakenError')
+        self.assertEqual(result['data'], None)
+        
+    def test_create_account_2(self):
+        data = {'username': 'username'}
+        response = self.client.post(self.__class__.PREFIX + 'create_account_2', {'data': json_encode(data)})
+        result = json.loads(response.content)
+        self.assertEqual(result['error']['type'], 'UserNameTakenError')
+        self.assertTrue(len(result['error']['data']) == 2)
+        
     def test_get_with_form_params(self):
         param1 = '2013-01-03T01:02:03Z'
         param2 = 'hello'

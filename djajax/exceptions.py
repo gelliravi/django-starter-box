@@ -10,7 +10,7 @@ class AjaxError(Exception):
         :param  data: Any data that you wish to attach this AjaxError.
         """
 
-        super(AjaxError, self).__init__(self, message)
+        super(AjaxError, self).__init__(message)
 
         self.data = data
 
@@ -39,7 +39,7 @@ class InvalidParamError(AjaxError):
             errors not tied to any field. 
         """
 
-        super(InvalidParamError, self).__init__(self, data=errors)
+        super(InvalidParamError, self).__init__(data=errors)
 
 class InvalidDataError(AjaxError):
     """
