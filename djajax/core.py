@@ -40,21 +40,22 @@ def djajax_autodiscover():
         import_module("%s.ajax" % app)
 
 class DjAjaxEntry(object):
-    def __init__(self, name, method, function):
+    def __init__(self, function, name, method, form):
+        self.function = function
         self.name = name
         self.method = method
-        self.function = function
+        self.form = form
         
-    def call(self, *args, **kwargs):
+    def call(self, request, params):
         """ Call the function. """
         
-        return self.function(*args, **kwargs)
+        return self.function(request, **params)
 
 class DjAjax(object):
     def __init__(self):
         self._entries = {}
 
-    def register(self, function, name=None, method='POST'):
+    def register(self, function, name=None, method='POST', form=None):
         """
         Register a function as an AJAX method.
 
@@ -75,5 +76,13 @@ class DjAjax(object):
         if name in self._entries:
             raise Exception('AJAX method already registered: %s' % name)
 
-        entry = DjAjaxEntry(name=name, method=method, function=function)
+        entry = DjAjaxEntry(name=name, method=method, function=function, form=form)
         self._entries[name] = entry
+
+    def get(self, name, method):
+        entry = self._entries.get(name, None)
+
+        if entry and entry.method == method:
+            return entry 
+
+        return None
