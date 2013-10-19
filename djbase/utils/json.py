@@ -1,9 +1,13 @@
+# need this since this module's name clashes with the global json
+from __future__ import absolute_import 
+
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.functional import Promise, curry
 from django.utils.encoding import force_text
+
 import json
 
-class MyJSONEncoder(DjangoJSONEncoder):
+class Encoder(DjangoJSONEncoder):
     """JSON encoder that encodes datetime and date as ISO format.
     
     This is needed as simplejson and json don't encode dates.
@@ -19,7 +23,7 @@ class MyJSONEncoder(DjangoJSONEncoder):
     # - namedtuple_as_object
     # - tuple_as_array
     def __init__(self, *args, **kwargs):
-        self._parent = super(MyJSONEncoder, self)    
+        self._parent = super(Encoder, self)    
         self._parent.__init__(*args, **kwargs)
     
     def default(self, obj):        
@@ -32,8 +36,9 @@ class MyJSONEncoder(DjangoJSONEncoder):
 
         return self._parent.default(obj)
 
-json_stringify = curry(
+encode = curry(
     json.dumps, 
     separators=(',', ':'),  # most compact JSON output
-    cls=MyJSONEncoder       # encodes datetime's
+    cls=Encoder             # encodes datetime's
 )
+
