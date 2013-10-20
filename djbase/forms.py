@@ -1,6 +1,6 @@
 from django import forms
 from django.forms import ValidationError
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _l
 
 from .utils import parse_iso_datetime
 
@@ -15,7 +15,7 @@ class ISODateTimeField(forms.Field):
     """
 
     default_error_messages = {
-        'invalid': _('Invalid ISO date')
+        'invalid': _l('Invalid ISO date')
     }
 
     def to_python(self, value):
@@ -37,4 +37,3 @@ class ISODateTimeField(forms.Field):
                 pass
 
         raise ValidationError(self.error_messages['invalid'], code='invalid')
-
