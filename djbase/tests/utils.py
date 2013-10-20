@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django.utils import timezone
 from django.utils.translation import ugettext as _
 from django.test import TestCase

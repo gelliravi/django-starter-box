@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import dateutil.parser
 
 def parse_iso_datetime(str):

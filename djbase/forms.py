@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django import forms
 from django.forms import ValidationError
 from django.forms.widgets import TextInput, PasswordInput
@@ -46,7 +48,7 @@ class FixedCharField(forms.CharField):
     """
 
     default_error_messages = {
-        'wrong_length': _l(u'Please ensure this value has exactly %(set_length)d characters (it has %(value_length)d).'),
+        'wrong_length': _l('Please ensure this value has exactly %(set_length)d characters (it has %(value_length)d).'),
     }
 
     def __init__(self, max_length, *args, **kwargs):

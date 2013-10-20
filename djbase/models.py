@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django.db import models
 from django.utils.translation import ugettext_lazy as _l
 
@@ -47,7 +49,7 @@ class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
         return pickle.dumps(value)
 
 class FixedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
-    description = _l(u'String (exactly %(max_length)s)')
+    description = _l('String (exactly %(max_length)s)')
 
     def __init__(self, max_length, *args, **kwargs):
         self._parent = super(FixedCharField, self)

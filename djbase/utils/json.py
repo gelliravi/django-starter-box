@@ -1,5 +1,6 @@
 # need this since this module's name clashes with the global json
 from __future__ import absolute_import 
+from __future__ import unicode_literals
 
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.functional import Promise, curry
