@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import ValidationError
+from django.forms.widgets import TextInput, PasswordInput
 from django.utils.translation import ugettext_lazy as _l
 
 from .utils import parse_iso_datetime
@@ -37,3 +38,31 @@ class ISODateTimeField(forms.Field):
                 pass
 
         raise ValidationError(self.error_messages['invalid'], code='invalid')
+
+class FixedCharField(forms.CharField):
+    """
+    Fixed-length character field. Length is measured in terms of bytes,
+    specifically the number of bytes needed for the string's UTF-8 encoding.
+    """
+
+    default_error_messages = {
+        'wrong_length': _l(u'Please ensure this value has exactly %(set_length)d characters (it has %(value_length)d).'),
+    }
+
+    def __init__(self, max_length, *args, **kwargs):
+        super(FixedCharField, self).__init__(max_length=max_length, min_length=max_length, *args, **kwargs)
+
+    def validate(self, value):
+        # we standardize to byte length.
+        value_length = len(value.encode('utf-8'))
+        if value_length != self.max_length:
+            raise ValidationError(self.error_messages['wrong_length'], code='wrong_length', params={'set_length': self.max_length, 'value_length': value_length})
+
+        return super(FixedCharField, self).validate(value)
+        
+    def widget_attrs(self, widget):
+        attrs = super(FixedCharField, self).widget_attrs(widget)
+        if isinstance(widget, (TextInput, PasswordInput)):
+            # The HTML attribute is maxlength, not max_length.
+            attrs.update({'maxlength': str(self.max_length)})
+        return attrs
