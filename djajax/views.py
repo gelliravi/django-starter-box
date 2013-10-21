@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.utils.encoding import force_text
 from djbase.utils.json import encode as json_encode
 
 from . import djajax 
@@ -20,7 +21,7 @@ def _ajax_json(error=None, data=None):
 
         # As security feature, we include more stuff only when it is AjaxError
         if isinstance(error, AjaxError):
-            error_dict['message'] = str(error)             
+            error_dict['message'] = force_text(error)             
             error_dict['data'] = error.data 
 
     return json_encode({'error': error_dict, 'data': data})

@@ -1,3 +1,4 @@
+from django.utils.encoding import force_text
 from django.utils.importlib import import_module
 
 _LOADING = False
@@ -67,7 +68,7 @@ class DjAjax(object):
 
         # Generate a default name
         if not name:
-            module = ''.join(str(function.__module__).rsplit('.ajax', 1))
+            module = ''.join(force_text(function.__module__).rsplit('.ajax', 1))
             name = '.'.join((module, function.__name__))
 
         if ':' in name:

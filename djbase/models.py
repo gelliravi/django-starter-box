@@ -5,6 +5,7 @@ from django.utils.translation import ugettext_lazy as _l
 
 # for Python 2 & 3 compat
 from django.utils.six import with_metaclass
+from django.utils import six
 
 from .forms import FixedCharField as FixedCharFormField
 
@@ -36,11 +37,11 @@ class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
         super(PickleField, self).__init__(*args, **kwargs)
 
     def to_python(self, value):
-        if isinstance(value, unicode):
+        if isinstance(value, six.text_type):
             # Django probably converts the value to unicode,
             # so we have to convert it back.
             return pickle.loads(value.encode('ascii'))
-        elif isinstance(value, str):
+        elif isinstance(value, bytes):
             return pickle.loads(value)
 
         return value 
