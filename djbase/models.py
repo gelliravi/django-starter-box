@@ -15,6 +15,17 @@ try:
 except ImportError:
     import pickle
 
+class BaseModel(models.Model):
+    """A mixin providing some useful generic methods.
+    """
+
+    @classmethod
+    def field(cls, name):
+        return cls._meta.get_field(name)
+
+    class Meta:
+        abstract = True
+
 # Subclass SubfieldBase to ensure to_python() is called everytime value is set.
 class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
     """Represents a field that stores any arbitrary Python object 
