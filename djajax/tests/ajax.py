@@ -1,6 +1,6 @@
 from django import forms
 from djbase.forms import ISODateTimeField
-from djajax.decorators import djajax 
+from djajax.decorators import ajax 
 from djajax.exceptions import AjaxError
 
 class PostForm(forms.Form):
@@ -24,40 +24,40 @@ class UserNameTakenError(AjaxError):
             message='The username you chosen has been taken. Here are some suggestions.', 
             data=suggestions)
 
-@djajax(method='POST')
+@ajax(method='POST')
 def post_no_param(request):
     return 'success'
 
-@djajax(method='POST')
+@ajax(method='POST')
 def post_with_params(request, param1, param2):
     return {
         'param1'    : param1,
         'param2'    : param2,
     }
 
-@djajax(method='POST', form=PostForm)
+@ajax(method='POST', form=PostForm)
 def post_with_form_params(request, param1, param2):
     return {
         'param1'    : param1,
         'param2'    : param2,
     }
 
-@djajax(method='POST')
+@ajax(method='POST')
 def create_account(request):
     raise EmailTakenError()
 
-@djajax(method='POST')
+@ajax(method='POST')
 def create_account_2(request, username):
     raise UserNameTakenError(suggestions=('suggested1', 'suggested2'))
 
-@djajax(method='GET', form=PostForm)
+@ajax(method='GET', form=PostForm)
 def get_with_form_params(request, param1, param2):
     return {
         'param1'    : param1,
         'param2'    : param2,
     }
 
-@djajax(name='multi.post', method='POST')
-@djajax(name='multi.get', method='GET')
+@ajax(name='multi.post', method='POST')
+@ajax(name='multi.get', method='GET')
 def multi(request):
     return 'success'

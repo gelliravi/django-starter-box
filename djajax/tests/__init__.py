@@ -18,13 +18,13 @@ class DjAjaxIntegrationTest(TestCase):
     def test_missing(self):
         response = self.client.post(self.__class__.PREFIX + 'missing')
         result = json.loads(response.content)
-        self.assertEqual(result['error']['type'], 'InvalidMethodError')
+        self.assertEqual(result['error']['type'], 'AjaxMethodError')
         self.assertEqual(result['data'], None)
 
     def test_wrong_method(self):
         response = self.client.get(self.__class__.PREFIX + 'post_no_param')
         result = json.loads(response.content)
-        self.assertEqual(result['error']['type'], 'InvalidMethodError')
+        self.assertEqual(result['error']['type'], 'AjaxMethodError')
         self.assertEqual(result['data'], None)
 
     def test_post_no_param(self):
@@ -46,7 +46,7 @@ class DjAjaxIntegrationTest(TestCase):
     def test_post_with_params_data_error(self):
         response = self.client.post(self.__class__.PREFIX + 'post_with_params', {'data': 'invalid'})
         result = json.loads(response.content)
-        self.assertEqual(result['error']['type'], 'InvalidDataError')
+        self.assertEqual(result['error']['type'], 'AjaxDataError')
         self.assertEqual(result['data'], None)
 
     def test_post_with_form_params(self):
@@ -66,7 +66,7 @@ class DjAjaxIntegrationTest(TestCase):
 
         response = self.client.post(self.__class__.PREFIX + 'post_with_form_params', {'data': json_encode(data)})
         result = json.loads(response.content)
-        self.assertEqual(result['error']['type'], 'InvalidParamError')
+        self.assertEqual(result['error']['type'], 'AjaxParamError')
         self.assertTrue('param2' in result['error']['data'])
         self.assertTrue('param1' not in result['error']['data'])
         self.assertTrue(result['error']['data']['param2'][0] != '')

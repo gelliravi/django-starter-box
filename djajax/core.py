@@ -11,7 +11,7 @@ def _clean_method(method):
 
     return 'POST'
 
-def djajax_autodiscover():
+def ajax_autodiscover():
     """
     Auto-discover INSTALLED_APPS ajax.py modules and fail silently when
     not present. NOTE: This is inspired/copied from dajaxice_autodiscover.
@@ -40,7 +40,7 @@ def djajax_autodiscover():
 
         import_module("%s.ajax" % app)
 
-class DjAjaxEntry(object):
+class AjaxEntry(object):
     def __init__(self, function, name, method, form):
         self.function = function
         self.name = name
@@ -52,7 +52,7 @@ class DjAjaxEntry(object):
         
         return self.function(request, **params)
 
-class DjAjax(object):
+class AjaxCore(object):
     def __init__(self):
         self._entries = {}
 
@@ -77,7 +77,7 @@ class DjAjax(object):
         if name in self._entries:
             raise Exception('AJAX method already registered: %s' % name)
 
-        entry = DjAjaxEntry(name=name, method=method, function=function, form=form)
+        entry = AjaxEntry(name=name, method=method, function=function, form=form)
         self._entries[name] = entry
 
     def get(self, name, method):

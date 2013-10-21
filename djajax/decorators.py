@@ -1,15 +1,15 @@
 import functools
 
-from . import djajax as djajax_core
+from . import ajax_core 
 
-def djajax(*args, **kwargs):
+def ajax(*args, **kwargs):
     """ 
     Register some function as an AJAX method.
     """
 
     if len(args) and not kwargs:
         function = args[0]
-        djajax_core.register(function)
+        ajax_core.register(function)
         return function
 
     def decorator(function):
@@ -17,7 +17,7 @@ def djajax(*args, **kwargs):
         def wrapper(request, *args2, **kwargs2):
             return function(request, *args2, **kwargs2)
 
-        djajax_core.register(function, *args, **kwargs)
+        ajax_core.register(function, *args, **kwargs)
         return wrapper
 
     return decorator

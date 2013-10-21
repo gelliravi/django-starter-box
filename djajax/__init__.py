@@ -1,3 +1,3 @@
-from .core import DjAjax
+from .core import AjaxCore
 
-djajax = DjAjax()
+ajax_core = AjaxCore()

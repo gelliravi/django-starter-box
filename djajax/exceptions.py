@@ -14,7 +14,7 @@ class AjaxError(Exception):
 
         self.data = data
 
-class InvalidMethodError(AjaxError):
+class AjaxMethodError(AjaxError):
     """
     Raised when the called method name is invalid or not registered.
 
@@ -23,7 +23,7 @@ class InvalidMethodError(AjaxError):
 
     pass 
 
-class InvalidParamError(AjaxError):
+class AjaxParamError(AjaxError):
     """
     Raised when one or more params are invalid.
 
@@ -39,9 +39,9 @@ class InvalidParamError(AjaxError):
             errors not tied to any field. 
         """
 
-        super(InvalidParamError, self).__init__(data=errors)
+        super(AjaxParamError, self).__init__(data=errors)
 
-class InvalidDataError(AjaxError):
+class AjaxDataError(AjaxError):
     """
     Raised when the input data cannot be JSON decoded.
 

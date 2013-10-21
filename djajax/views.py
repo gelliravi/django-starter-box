@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.utils.encoding import force_text
 from djbase.utils.json import encode as json_encode
 
-from . import djajax 
+from . import ajax_core
 from .exceptions import *
 
 import json
@@ -38,9 +38,9 @@ def call(request, name):
     """
 
     try:
-        entry = djajax.get(name=name, method=request.method)
+        entry = ajax_core.get(name=name, method=request.method)
         if not entry:
-            raise InvalidMethodError()
+            raise AjaxMethodError()
 
         data_raw = getattr(request, request.method).get('data', None)
         if data_raw is None:
@@ -49,13 +49,13 @@ def call(request, name):
             try:
                 data = json.loads(data_raw)
             except (ValueError, TypeError):
-                raise InvalidDataError()
+                raise AjaxDataError()
 
         if entry.form:
             form = entry.form(data)
             is_valid = form.is_valid()
             if not is_valid:
-                raise InvalidParamError(errors=form.errors)
+                raise AjaxParamError(errors=form.errors)
 
             data = form.cleaned_data
 
