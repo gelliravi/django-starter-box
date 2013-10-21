@@ -1,16 +1,18 @@
-class AjaxError(Exception):
+from djbase.exceptions import BaseError
+
+class AjaxError(BaseError):
     """
     Root class for all DjAjax related errors.
 
     You may create subclasses based on this.
     """
 
-    def __init__(self, message=None, data=None):
+    def __init__(self, message=None, cause=None, data=None):
         """
         :param  data: Any data that you wish to attach this AjaxError.
         """
 
-        super(AjaxError, self).__init__(message)
+        super(AjaxError, self).__init__(message=message, cause=cause)
 
         self.data = data
 
