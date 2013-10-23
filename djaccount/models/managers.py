@@ -1,25 +1,23 @@
 from __future__ import unicode_literals
 
+import hashlib
+import uuid
+import importlib 
+import facebook
+
 from django.db import IntegrityError, models, DatabaseError, transaction
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.conf import settings
 from django.utils import timezone
 from django.utils.translation import pgettext_lazy as _pl, ugettext_lazy as _l
 
 from djaccount.exceptions import *
-
-import hashlib
-import uuid
-import importlib 
-import facebook
+from djaccount.conf import settings as app_settings
 
 _models = importlib.import_module('djaccount.models')
 
 class AbstractAccountManager(BaseUserManager):
-    PASSWORD_RESET_EXPIRY_MINUTES       = 120
-    PASSWORD_RESET_THRESHOLD_MINUTES    = 10
-
     SERVICE_FB      = 1
 
     def change_email(self, account, email):
@@ -34,25 +32,24 @@ class AbstractAccountManager(BaseUserManager):
         :raises:    AccountError
         """
 
-        old_email = account.email 
-        old_is_active = account.is_active
+        email = self.normalize_email(email)
 
-        account.email = self.normalize_email(email)
-        account.is_active = False 
-        
-        ok = False
+        old_email       = account.email 
+        old_is_active   = account.is_active
+
+        account.email       = email
+        account.is_active   = False 
+        ok  = False
 
         try:
             account.save(update_fields=('email', 'is_active'))
-            ok = True 
+            ok = True
         except IntegrityError as e:
             raise AccountEmailTakenError(cause=e)
-        except DatabaseError as e:
-            raise AccountError(cause=e)
         finally:
             if not ok:
-                account.email = old_email
-                account.is_active = old_is_active
+                account.email       = old_email
+                account.is_active   = old_is_active
 
     def calc_verify_code(self, account):
         """Gets the email verification code.
@@ -65,7 +62,7 @@ class AbstractAccountManager(BaseUserManager):
         created_str = account.created.strftime('%Y-%m-%d_%H:%M:%S')
 
         m = hashlib.sha1()
-        m.update('%s|%s|%s|%s' % (account.id, account.email.lower(), created_str, settings.SECRET_KEY))
+        m.update('%s|%s|%s|%s' % (account.id, account.email.lower(), created_str, app_settings.ACCOUNT_SECRET_KEY))
 
         code = m.hexdigest().lower()
         return code 
@@ -84,19 +81,10 @@ class AbstractAccountManager(BaseUserManager):
         if real_code != code:
             return False
 
-        old_is_active = account.is_active
-        account.is_active = True 
-
-        ok = False 
-            
-        try:
-            account.save(update_fields=('is_active',))
-            ok = True 
-        finally:
-            if not ok:
-                account.is_active = old_is_active
-
-        return True
+        # This will not trigger the pre_save signal.    
+        ok = self.filter(pk=account.pk, email=account.email).update(is_active=True) > 0
+    
+        return ok
 
     def _set_login(self, account, request, remember):        
         if remember:
@@ -123,16 +111,16 @@ class AbstractAccountManager(BaseUserManager):
         :param  service_id: ID of the external service. For example, Facebook user ID.
         :param  remember:   Whether to remember the login session for some time.
         
-        :raises:    AccountLoginError, AccountMissingError 
+        :raises:    AccountMissingError 
         :returns:   AbstractAccount
         """
 
-        try: 
-            account = _models.AccountExternal.objects.get(service=service, service_id=service_id)
-        except _models.AccountExternal.DoesNotExist as e:
-            raise AccountMissingError(cause=e)
+        account = authenticate(username=(service, service_id), password=None)
+        if account:
+            self._set_login(account=account, request=request, remember=remember)
+        else:
+            raise AccountMissingError()
 
-        self._set_login(account=account, request=request, remember=remember)
         return account 
 
     def login(self, email, password, request, remember=True):
@@ -149,23 +137,22 @@ class AbstractAccountManager(BaseUserManager):
         :returns:   AbstractAccount
         """
 
-        try:
-            # The underlying database must be case-insensitive, at least
-            # for this column.
-            account = self.get(email=email)
-        except self.model.DoesNotExist as e: 
-            raise AccountMissingError(cause=e)
-
-        if account.has_usable_password():        
-            pwd_valid = account.check_password(password)
-            if pwd_valid:
-                self._set_login(account=account, request=request, remember=remember)
-            else:
-                raise AccountLoginError()
+        account = authenticate(username=email, password=password)
+        if account:
+            self._set_login(account=account, request=request, remember=remember)
         else:
-            # if the user is created thru an external auth system,
-            # then he cannot login using the regular method unless he has a password.
-            raise AccountNoPasswordError()
+            # Now need to find out the exact login error reason.
+            try:
+                account = self.get(email=email)
+            except self.model.DoesNotExist as e: 
+                raise AccountMissingError(cause=e)
+
+            if account.has_usable_password():
+                raise AccountLoginError()
+            else:
+                # if the user is created thru an external auth system,
+                # then he cannot login using the regular method unless he has a password.
+                raise AccountNoPasswordError()
 
         return account
 
@@ -415,55 +402,41 @@ class AbstractAccountManager(BaseUserManager):
 
     def _calc_password_reset_hashed_token(self, token):
         m = hashlib.sha1()
-        s = '%s_%s' % (token, settings.SECRET_KEY)
+        s = '%s_%s' % (token, app_settings.ACCOUNT_SECRET_KEY)
         s = s.lower()
         m.update(s)
         return m.hexdigest().lower()
         
-    def load_password_reset(self, token):
+    def do_password_reset(self, token, new_password):
         """
-        Loads the password reset request given a reset token.
+        Validates the password reset request and changes the password.
 
-        This is used to verify the password reset request is valid.
+        :returns:   AccountPasswordReset
         """
 
         hash = self._calc_password_reset_hashed_token(token)
         
         try:
-            req = _models.AccountPasswordReset.objects.select_related().get(hash=hash, is_done=False)
-        except _models.AccountPasswordReset.DoesNotExist:
-            return None
-        else:
-            now = timezone.now()
-            delta = now - req.created
-            delta_secs = delta.total_seconds()
-            
-            if 0 <= delta_secs and delta_secs <= self.PASSWORD_RESET_EXPIRY_MINUTES * 60:
-                return req
-                
-            return None
+            req = _models.AccountPasswordReset.objects.select_related().get(hash=hash)
+        except _models.AccountPasswordReset.DoesNotExist as e:
+            raise AccountPasswordResetMissingError(cause=e)
         
-    def do_password_reset(self, account, new_password):
-        """
-        Performs a password change and delete the password reset request 
-        for an account. 
-
-        You must have validated that the password reset request is valid 
-        by using load_password_reset()
-
-        :type account:  AbstractAccount 
-
-        :returns:   void 
-        """
-
-        account.set_password(new_password)
-        account.save(force_update=True, update_fields=('password',))
+        req.account.set_password(new_password)
         
-        # Mark it as done. We do not want to
-        # delete so as to allow throttling of password resets.
-        # Do this last so that if above has error,
-        # user can retry resetting password.
-        _models.AccountPasswordReset.objects.filter(account=account).update(is_done=True, changed=timezone.now())
+        now = timezone.now()
+        expiry = now + datetime.timedelta(seconds=app_settings.ACCOUNT_PASSWORD_RESET_EXPIRY_MINUTES*60)
+
+        with transaction.commit_on_success():
+            req.account.save(update_fields=('password',))
+            count = _models.AccountPasswordReset.objects\
+                .filter(hash=hash, is_done=False, created__lt=expiry)\
+                .update(is_done=True, changed=now)
+            if not count:
+                raise AccountPasswordResetExpiredError()
+    
+        req.is_done = True 
+        req.changed = now
+        return req
         
     def create_password_reset(self, account):
         """
@@ -475,7 +448,7 @@ class AbstractAccountManager(BaseUserManager):
 
         There is at most one reset request for every account. 
         The reset creation process is throttled to prevent abuse. No more than
-        one request can be created within PASSWORD_RESET_THRESHOLD_MINUTES.
+        one request can be created within ACCOUNT_PASSWORD_RESET_THRESHOLD_MINUTES.
 
         :type account:  AbstractAccount
 
@@ -489,7 +462,7 @@ class AbstractAccountManager(BaseUserManager):
         try:
             req = _models.AccountPasswordReset.objects.get(account=account)
         except _models.AccountPasswordReset.DoesNotExist:
-            # A race condition here is rare and benign. The worst is the user
+            # A race condition here (IntegrityError) is rare and benign. The worst is the user
             # gets an error message.
             req = _models.AccountPasswordReset.objects.create(hash=hash, account=account)
         else:
@@ -497,11 +470,15 @@ class AbstractAccountManager(BaseUserManager):
             delta = now - req.created
             delta_secs = delta.total_seconds()
             
-            if 0 <= delta_secs and delta_secs <= self.PASSWORD_RESET_THRESHOLD_MINUTES * 60:
+            if 0 <= delta_secs and delta_secs <= app_settings.ACCOUNT_PASSWORD_RESET_THRESHOLD_MINUTES * 60:
                 return None
                 
             # Have to use this method as hash is primary key and Django
             # somehow does not support changing primary key.
-            _models.AccountPasswordReset.objects.filter(account=account).update(hash=hash, is_done=False, created=now)
-            
+            count = _models.AccountPasswordReset.objects\
+                        .filter(account=account, hash=req.hash)\
+                        .update(hash=hash, is_done=False, created=now)
+            if not count:
+                return None
+
         return token
