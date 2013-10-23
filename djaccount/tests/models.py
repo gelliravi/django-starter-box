@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from djbase.utils import mock
 
+from djaccount.conf import settings as app_settings
 from djaccount.models import Account
 from djaccount.exceptions import *
 
@@ -202,3 +203,103 @@ class AccountManagerTest(TestCase):
             self._test_password_reset(acc)
         finally:
             acc.delete()
+
+    def test_fb_load_or_create(self):
+        cookies = {}
+        app_id  = 'crap'
+        app_secret = 'secret'
+
+        req = self.factory.get('/')
+        req.session = mock.Session()
+        
+        fb_user = mock.facebook.get_user_from_cookie(cookies, app_id, app_secret)
+        ext = Account.objects.fb_load_or_create(cookies=cookies, app_id=app_id, app_secret=app_secret)
+
+        try:
+            self.assertEqual(ext.account.first_name, mock.facebook.PROFILE['first_name'])
+            self.assertEqual(ext.account.last_name, mock.facebook.PROFILE['last_name'])
+            self.assertEqual(ext.account.middle_name, mock.facebook.PROFILE['middle_name'])
+            self.assertEqual(ext.account.locale, mock.facebook.PROFILE['locale'])
+            self.assertEqual(ext.account.email, Account.objects.normalize_email(mock.facebook.PROFILE['email']))
+            self.assertFalse(ext.account.is_active)
+            self.assertFalse(ext.account.is_superuser)
+            self.assertFalse(ext.account.is_staff)
+
+            self.assertEqual(fb_user['uid'], ext.service_id)
+            self.assertEqual(Account.objects.SERVICE_FB, ext.service)
+
+            self.assertFalse(ext.account.has_usable_password())
+
+            ext2 = Account.objects.fb_load_or_create(cookies=cookies, app_id=app_id, app_secret=app_secret)
+            self.assertEqual(ext2.pk, ext.pk)
+
+            with self.assertRaises(AccountExternalSameEmailError):
+                Account.objects.create_external_user(email=ext.account.email, first_name=ext.account.first_name, service=ext.service, service_id=ext.service_id)
+
+            with self.assertRaises(AccountNoPasswordError):
+                Account.objects.login(request=req, email=ext.account.email, password='1')
+        finally:
+            ext.delete()
+            ext.account.delete()
+
+    def test_fb_link(self):
+        cookies = {}
+        app_id  = 'crap'
+        app_secret = 'secret'
+
+        acc = self._create()
+        acc2 = Account.objects.create_user(email=self.EMAIL_2, first_name=self.FIRST_NAME, password=self.PASSWORD)
+
+        try:
+            ext = Account.objects.fb_link(account=acc, cookies=cookies, app_id=app_id, app_secret=app_secret)
+            self.assertEqual(ext.account.pk, acc.pk)
+
+            with self.assertRaises(AccountExternalTakenError):
+                Account.objects.link_external(account=acc2, service=ext.service, service_id=ext.service_id)
+
+            exts = Account.objects.load_external(account=acc2)
+            self.assertEqual(0, len(exts))
+
+            exts = Account.objects.load_external(account=ext.account)
+            self.assertEqual(1,len(exts))
+            self.assertTrue(ext.service in exts)
+            self.assertEqual(exts[ext.service], {'id':ext.service_id})            
+        finally:
+            acc.delete()
+            acc2.delete()
+
+    def test_login_external(self):
+        cookies = {}
+        app_id  = 'crap'
+        app_secret = 'secret'
+
+        req = self.factory.get('/')
+        req.session = mock.Session()
+        
+        ext = Account.objects.fb_load_or_create(cookies=cookies, app_id=app_id, app_secret=app_secret)
+
+        try:
+            acc = Account.objects.login_external(request=req, service=ext.service, service_id=ext.service_id)
+            self.assertTrue(acc.pk, ext.account.pk)
+
+            with self.assertRaises(AccountMissingError):
+                Account.objects.login_external(request=req, service=ext.service, service_id=ext.service_id+'0')                
+        finally:
+            ext.delete()
+            ext.account.delete()
+
+    def test_load_external(self):
+        cookies = {}
+        app_id  = 'crap'
+        app_secret = 'secret'
+
+        ext = Account.objects.fb_load_or_create(cookies=cookies, app_id=app_id, app_secret=app_secret)
+
+        try:
+            exts = Account.objects.load_external(account=ext.account)
+            self.assertEqual(1,len(exts))
+            self.assertTrue(ext.service in exts)
+            self.assertEqual(exts[ext.service], {'id':ext.service_id})            
+        finally:
+            ext.delete()
+            ext.account.delete()
