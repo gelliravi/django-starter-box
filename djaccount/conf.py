@@ -24,4 +24,9 @@ class _Settings(object):
 
         return def_val
 
+    @property 
+    def is_test(self):
+        import sys
+        return 'test' in sys.argv
+
 settings = _Settings()
