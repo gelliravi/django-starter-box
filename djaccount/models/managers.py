@@ -431,11 +431,12 @@ class AbstractAccountManager(BaseUserManager):
         expiry = now + datetime.timedelta(seconds=app_settings.ACCOUNT_PASSWORD_RESET_EXPIRY_MINUTES*60)
 
         with transaction.commit_on_success():
-            req.account.save(update_fields=('password',))
             count = _models.AccountPasswordReset.objects\
                 .filter(hash=hash, is_done=False, created__lt=expiry)\
                 .update(is_done=True, changed=now)
-            if not count:
+            if count:
+                req.account.save(update_fields=('password',))
+            else:
                 raise AccountPasswordResetExpiredError()
     
         req.is_done = True 
