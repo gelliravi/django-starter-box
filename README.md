@@ -21,6 +21,8 @@ DjBase
 
 * Parses ISO formatted datetime's easily.  
 
+* Useful fields: `ISODateTimeField`, `FixedCharField`, `PickleField`
+
 Installation
 ============
 You can create a fork of this project or download individual apps within 
@@ -83,8 +85,8 @@ No configuration required!
 
 To auto-discover AJAX methods, add the following to your main `<project>/urls.py`:
 ```python
-from djajax.core import djajax_autodiscover
-djajax_autodiscover()
+from djajax.core import ajax_autodiscover
+ajax_autodiscover()
 
 urlpatterns = patterns('',
     # ... your URLs ...
@@ -96,9 +98,9 @@ urlpatterns = patterns('',
 
 To register a regular method as an AJAX method:
 ```python
-from djajax.decorators import djajax
+from djajax.decorators import ajax
 
-@djajax(method='POST')
+@ajax(method='POST')
 def createAccount(request, name, email, password):
     # ... do something ...
 
