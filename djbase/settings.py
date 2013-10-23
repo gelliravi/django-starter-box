@@ -136,6 +136,10 @@ TEMPLATE_DIRS = (
 
 AUTH_USER_MODEL = 'djaccount.Account'
 
+AUTHENTICATION_BACKENDS = \
+    ('djaccount.backends.auth.AuthBackend', 
+    'django.contrib.auth.backends.ModelBackend',)
+
 INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
