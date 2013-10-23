@@ -35,3 +35,9 @@ class AccountExternalNoEmailError(AccountError):
 
 class AccountNoCookieError(AccountError):
     pass
+
+class AccountPasswordResetMissingError(AccountError):
+    pass 
+
+class AccountPasswordResetExpiredError(AccountError):
+    pass 
