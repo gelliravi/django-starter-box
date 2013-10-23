@@ -168,6 +168,7 @@ class AccountManagerTest(TestCase):
         req = Account.objects.do_password_reset(token=token, new_password=self.PASSWORD*2)
         pwd_valid = req.account.check_password(self.PASSWORD*2)
         self.assertTrue(pwd_valid)
+        self.assertTrue(acc.pk, req.account.pk)
         self.assertTrue(req.is_done)
         self.assertTrue(req.changed >= req.created)
 
@@ -181,10 +182,18 @@ class AccountManagerTest(TestCase):
         self.assertTrue(pwd_valid)
         
         with self.assertRaises(AccountPasswordResetExpiredError): 
-            Account.objects.do_password_reset(token=token, new_password=self.PASSWORD*2)
+            Account.objects.do_password_reset(token=token, new_password=self.PASSWORD)
+        
+        acc = Account.objects.get(pk=acc.pk)
+        pwd_valid = acc.check_password(self.PASSWORD*2)
+        self.assertTrue(pwd_valid)
 
         with self.assertRaises(AccountPasswordResetMissingError): 
-            Account.objects.do_password_reset(token=token+'0', new_password=self.PASSWORD*2)
+            Account.objects.do_password_reset(token=token+'0', new_password=self.PASSWORD)
+
+        acc = Account.objects.get(pk=acc.pk)
+        pwd_valid = req.account.check_password(self.PASSWORD*2)
+        self.assertTrue(pwd_valid)
 
     def test_create_password_reset(self):
         acc = self._create()
