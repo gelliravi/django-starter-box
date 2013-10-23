@@ -1,8 +1,10 @@
 from __future__ import unicode_literals
 
 import hashlib
-import uuid
 import importlib 
+import datetime
+import uuid
+
 import facebook
 
 from django.db import IntegrityError, models, DatabaseError, transaction
@@ -62,7 +64,7 @@ class AbstractAccountManager(BaseUserManager):
         created_str = account.created.strftime('%Y-%m-%d_%H:%M:%S')
 
         m = hashlib.sha1()
-        m.update('%s|%s|%s|%s' % (account.id, account.email.lower(), created_str, app_settings.ACCOUNT_SECRET_KEY))
+        m.update('%s|%s|%s|%s' % (account.id, account.email, created_str, app_settings.ACCOUNT_SECRET_KEY))
 
         code = m.hexdigest().lower()
         return code 
@@ -83,7 +85,9 @@ class AbstractAccountManager(BaseUserManager):
 
         # This will not trigger the pre_save signal.    
         ok = self.filter(pk=account.pk, email=account.email).update(is_active=True) > 0
-    
+        if ok:
+            account.is_active = True 
+
         return ok
 
     def _set_login(self, account, request, remember):        
