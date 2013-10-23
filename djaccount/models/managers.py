@@ -385,7 +385,9 @@ class AbstractAccountManager(BaseUserManager):
         first_name  = profile['first_name']
         email       = profile.get('email', None)
             
-        if not email:
+        if email:
+            email = self.normalize_email(email)
+        else:
             raise AccountExternalNoEmailError() 
 
         ext = self.create_external_user(email=email, first_name=first_name, service=service, service_id=service_id)
