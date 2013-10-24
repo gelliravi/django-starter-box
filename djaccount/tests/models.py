@@ -9,11 +9,11 @@ from django.utils import timezone
 from djbase.utils import mock
 
 from djaccount.conf import settings as app_settings
-from djaccount.models import Account, AccountExternalFriends
+from djaccount.models import AccountTest as Account, AccountExternalFriends
 from djaccount.exceptions import *
 
 @override_settings(
-    AUTH_USER_MODEL='djaccount.Account',
+    AUTH_USER_MODEL='djaccount.AccountTest',
     PASSWORD_HASHERS = ('django.contrib.auth.hashers.MD5PasswordHasher',),
 )
 class AccountManagerTest(TransactionTestCase):

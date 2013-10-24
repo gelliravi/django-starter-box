@@ -14,7 +14,7 @@ _mgrs = importlib.import_module('.managers', 'djaccount.models')
 # This file gets loaded before the override_settings take effect,
 # and so we cannot override AUTH_USER_MODEL.
 if 'test' in sys.argv:
-    _USER_MODEL = 'djaccount.Account'
+    _USER_MODEL = 'djaccount.AccountTest'
 else:
     _USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', None) or \
                   'auth.User'
@@ -112,8 +112,8 @@ class AbstractAccount(AbstractBaseUser, PermissionsMixin, BaseModel):
     def __unicode__(self):
         return self.email
 
-if _USER_MODEL == 'djaccount.Account':
-    class Account(AbstractAccount):
+if _USER_MODEL == 'djaccount.AccountTest':
+    class AccountTest(AbstractAccount):
         pass 
 
 class AccountPasswordReset(BaseModel):
