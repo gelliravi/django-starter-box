@@ -112,8 +112,9 @@ class AbstractAccount(AbstractBaseUser, PermissionsMixin, BaseModel):
     def __unicode__(self):
         return self.email
 
-class Account(AbstractAccount):
-    pass 
+if _USER_MODEL == 'djaccount.Account':
+    class Account(AbstractAccount):
+        pass 
 
 class AccountPasswordReset(BaseModel):
     hash        = FixedCharField(max_length=32, primary_key=True)
