@@ -7,11 +7,17 @@ from django.utils.translation import pgettext_lazy as _pl, ugettext_lazy as _l
 from djbase.models import FixedCharField, BaseModel
 
 import importlib 
+import sys 
 
 _mgrs = importlib.import_module('.managers', 'djaccount.models')
 
-_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', None) or \
-              'auth.User'
+# This file gets loaded before the override_settings take effect,
+# and so we cannot override AUTH_USER_MODEL.
+if 'test' in sys.argv:
+    _USER_MODEL = 'djaccount.Account'
+else:
+    _USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', None) or \
+                  'auth.User'
 
 # See how to customize:
 # https://docs.djangoproject.com/en/1.5/topics/auth/customizing/#auth-custom-user
