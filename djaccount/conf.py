@@ -7,6 +7,10 @@ from django.conf import settings as django_settings
 def _hash(s):
     m = hashlib.sha1()
     m.update(s)
+    hash = m.hexdigest().lower()
+
+    m = hashlib.sha1()
+    m.update(s + hash)
     return m.hexdigest().lower()
 
 class _Settings(object):
