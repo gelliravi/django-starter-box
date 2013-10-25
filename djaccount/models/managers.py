@@ -15,7 +15,9 @@ from django.utils.translation import pgettext_lazy as _pl, ugettext_lazy as _l
 from djaccount.exceptions import *
 from djaccount.conf import settings as app_settings
 
-if app_settings.is_test:
+from djbase.utils.mock import is_test 
+
+if is_test():
     from djbase.utils.mock import facebook 
 else:
     import facebook
