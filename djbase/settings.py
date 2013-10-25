@@ -134,8 +134,6 @@ TEMPLATE_DIRS = (
     # Don't forget to use absolute paths, not relative paths.
 )
 
-AUTH_USER_MODEL = 'djaccount.Account'
-
 AUTHENTICATION_BACKENDS = \
     ('djaccount.backends.auth.AuthBackend', 
     'django.contrib.auth.backends.ModelBackend',)
