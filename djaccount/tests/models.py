@@ -47,10 +47,17 @@ class AccountManagerTest(TransactionTestCase):
         self.assertTrue(acc.created <= timezone.now())
         self.assertEqual(acc.timezone, Account.INVALID_TIMEZONE)
 
-    def test_lower_email(self):
-        if app_settings.ACCOUNT_LOWER_EMAIL:
-            with self.assertRaises(AccountEmailTakenError):
-                Account.objects.create_user(email=_unnormalize(self.EMAIL), first_name=self.FIRST_NAME, password=self.PASSWORD)
+    @override_settings(ACCOUNT_LOWER_EMAIL=True)
+    def test_lower_email_true(self):
+        email1  = Account.objects.normalize_email('john@doe.com')
+        email2  = Account.objects.normalize_email('jOhN@DoE.com')        
+        self.assertEqual(email1, email2)
+
+    @override_settings(ACCOUNT_LOWER_EMAIL=False)
+    def test_lower_email_false(self):
+        email1  = Account.objects.normalize_email('john@doe.com')
+        email2  = Account.objects.normalize_email('jOhN@DoE.com')        
+        self.assertNotEqual(email1, email2)
 
     def test_create_user_dup(self):
         with self.assertRaises(AccountEmailTakenError):
