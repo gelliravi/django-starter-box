@@ -25,6 +25,17 @@ _models = importlib.import_module('djaccount.models')
 class AbstractAccountManager(BaseUserManager):
     SERVICE_FB      = 1
 
+    @classmethod
+    def normalize_email(cls, email):
+        """ Whether to lowercase entire email based on 
+        ACCOUNT_LOWER_EMAIL setting. """
+
+        if app_settings.ACCOUNT_LOWER_EMAIL:
+            email = email or '' # follow BaseUserManager's behavior
+            return email.lower()
+        else:
+            return BaseUserManager.normalize_email(email)
+
     def change_email(self, account, email):
         """Changes the email of an account and resets the verification status.
         
@@ -144,6 +155,7 @@ class AbstractAccountManager(BaseUserManager):
         :returns:   AbstractAccount
         """
 
+        email = self.normalize_email(email)
         account = authenticate(username=email, password=password)
         if account:
             self._set_login(account=account, request=request, remember=remember)

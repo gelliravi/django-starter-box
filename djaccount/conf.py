@@ -15,6 +15,7 @@ def _hash(s):
 
 class _Settings(object):
     DEFAULTS = {
+        'ACCOUNT_LOWER_EMAIL'                       :   True,
         'ACCOUNT_PASSWORD_RESET_EXPIRY_MINUTES'     :   120,
         'ACCOUNT_PASSWORD_RESET_THRESHOLD_MINUTES'  :   10,
         'ACCOUNT_SECRET_KEY'                        :   _hash(django_settings.SECRET_KEY)

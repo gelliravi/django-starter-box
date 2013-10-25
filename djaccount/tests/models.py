@@ -12,6 +12,11 @@ from djaccount.conf import settings as app_settings
 from djaccount.models import AccountTest as Account, AccountExternalFriends
 from djaccount.exceptions import *
 
+def _unnormalize(email):
+    if email:
+        return email[0].lower() + email[1:].upper()
+    return email 
+    
 @override_settings(
     AUTH_USER_MODEL='djaccount.AccountTest',
     PASSWORD_HASHERS = ('django.contrib.auth.hashers.MD5PasswordHasher',),
@@ -28,9 +33,9 @@ class AccountManagerTest(TransactionTestCase):
 
     def test_case_sensitive_email(self):
         try:
-            acc2 = Account.objects.get(email=self.acc.email.upper())
+            acc2 = Account.objects.get(email=_unnormalize(self.acc.email))
         except Account.DoesNotExist:
-            print 'WARNING: Email is case sensitive'
+            print 'WARNING: Database email column is case sensitive'
 
     def test_create_user(self):
         acc = self.acc
@@ -41,6 +46,11 @@ class AccountManagerTest(TransactionTestCase):
         self.assertEqual(acc.is_active, False)
         self.assertTrue(acc.created <= timezone.now())
         self.assertEqual(acc.timezone, Account.INVALID_TIMEZONE)
+
+    def test_lower_email(self):
+        if app_settings.ACCOUNT_LOWER_EMAIL:
+            with self.assertRaises(AccountEmailTakenError):
+                Account.objects.create_user(email=_unnormalize(self.EMAIL), first_name=self.FIRST_NAME, password=self.PASSWORD)
 
     def test_create_user_dup(self):
         with self.assertRaises(AccountEmailTakenError):
