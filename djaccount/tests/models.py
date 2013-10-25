@@ -20,6 +20,7 @@ def _unnormalize(email):
 @override_settings(
     AUTH_USER_MODEL='djaccount.AccountTest',
     PASSWORD_HASHERS = ('django.contrib.auth.hashers.MD5PasswordHasher',),
+    AUTHENTICATION_BACKENDS = ('djaccount.backends.auth.AuthBackend',),
 )
 class AccountManagerTest(TransactionTestCase):
     EMAIL       = Account.objects.normalize_email('john@doe.com')
