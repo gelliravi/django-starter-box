@@ -73,6 +73,9 @@ CDN_STATIC_S3_PATH      = "static/" # You may change this. Ends with slash
 CDN_DEFAULT_S3_PATH     = "media/"  # You may change this. Ends with slash
 
 # Django-storage settings
+AWS_ACCESS_KEY_ID       = '' # TODO
+AWS_SECRET_ACCESS_KEY   = '' # TODO
+AWS_STORAGE_BUCKET_NAME = '' # TODO
 
 # Django settings to put both static and media files in S3
 DEFAULT_FILE_STORAGE    = 'djcdn.storage.s3.DefaultStorage'
