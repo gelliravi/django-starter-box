@@ -289,7 +289,7 @@ optionally serving over CloudFront.
    `VersionedStaticStorage` differs from `StaticStorage` in that it will 
    add a version string to the path.
    For example, a minified and gzipped CSS file will be at 
-   "s3.amazonaws.com/<your-bucket>/static/<version>/css/main.min.gz.css"
+   "s3.amazonaws.com/{your-bucket}/static/{version}/css/main.min.gz.css"
 
 4. Do a `./manage.py cdn_done` to mark the current version as completely uploaded.
    If there is an error, DO NOT perform `cdn_done`. You should just simply retry step 3.
