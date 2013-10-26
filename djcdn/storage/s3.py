@@ -11,6 +11,7 @@ except ImportError:
 
 from storages.backends.s3boto import S3BotoStorage
 from django.conf import settings
+from django.core.files import File
 
 from djcdn.models import CDNVersion
 from djcdn.conf import settings as app_settings
@@ -39,6 +40,10 @@ class AbstractStorage(S3BotoStorage):
             mime = mimetypes.types_map.get('.'+type, None)
             if mime:
                 gzip_types += (mime,)
+
+        # Fix the issue when the mime type is not found
+        if 'js' in com_types:
+            gzip_types += ('text/javascript', 'application/javascript', 'application/x-javascript')
             
         self._cdn_gzip_storage =  S3BotoStorage(*args, headers=headers, gzip=True, gzip_content_types=gzip_types, **kwargs)
         self._parent.__init__(*args, headers=headers, gzip=False, **kwargs)
@@ -69,15 +74,18 @@ class AbstractStorage(S3BotoStorage):
         filters_map = self._cdn_settings('FILTERS')
         filters = filters_map.get(file_ext_lower, None)
 
-        content_raw = None 
         new_name =  name 
-            
+
         if filters:
-            content_raw = Util.apply_filters(filters=filters, content=content.read())
+            content_raw = content.read()
+            content_raw = Util.apply_filters(filters=filters, content=content_raw)
+
             file_name = Util.format_min_file_name(file_name, file_ext)
             new_name = '%s.%s' % (file_name, file_ext)
-            content.file = StringIO(content_raw)
-            
+            content = File(StringIO(content_raw.encode('utf-8')))
+            content.name = new_name 
+            content.open('rb')
+
         self._parent._save(name=new_name, content=content,)
         
         if file_ext in self._cdn_settings('COMPRESSED_TYPES'):
