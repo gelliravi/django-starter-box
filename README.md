@@ -44,12 +44,13 @@ DjBase
 
 DjCDN
 -----
-* Deploy dynamic media and user-uploaded files to Amazon S3.
+* Deploy static files to Amazon S3.
 * Serve static and dynamic files over Amazon Cloudfront.
 * Auto-minify and gzip CSS and JavaScript files. 
 * Auto-compress PNG and JPEG images.
 * Auto-versioning of static files so that expiry dates can be set to max
   on Cloudfront.
+* Rewrite URLs in CSS.
 
 Installation
 ============
@@ -277,7 +278,7 @@ optionally serving over CloudFront.
    For media files, use `{% cdn 'photos/1.jpg' type='DEFAULT' %}`. 
    Note that DEFAULT is case-sensitive.
 
-## Workflow 
+### Workflow 
 
 1. Download static files to your production server(s).
 
@@ -285,12 +286,11 @@ optionally serving over CloudFront.
    load-balanced web servers, just choose any one with the static files.
 
 3. Do a `./manage.py cdn_done` to mark the current version as completely uploaded.
-   If there is an error, DO NOT perform `cdn_done`. You should just simply retry step 3.
+   If there is an error, DO NOT perform `cdn_done`. You should simply retry step 2.
 
 4. **Not implemented yet** Clean up old versions in S3 by doing `./manage.py cdn_clean`. 
-   Only the 3 most
-   recent versions will be kept. (Just in case clients still use old versions
-   if they don't refresh your web pages.)
+   In case clients still use old versions of your web pages, if they don't refresh,
+   the 3 most recent versions will be kept.
 
 5. Restart your Django apps to reload new version info. 
    Generated HTML will then point to the new version of static files.
@@ -338,12 +338,12 @@ This shouldn't be a problem if your static files are at most several MBs big.
     accordingly.
 
 ### Does it work with Django-compressor?
-   Yes, because `django-compressor` works independently of `djcdn`.
-   Good thing is that `compressor` also auto-versions each file it generates
-   independently of how `djcdn` does it.
-   
-   You'd need to configure `compressor` to use CloudFront (or any other CDN).
-   See http://stackoverflow.com/questions/8688815/django-compressor-how-to-write-to-s3-read-from-cloudfront
+Yes, because `django-compressor` works independently of `djcdn`.
+Good thing is that `compressor` also auto-versions each file it generates
+independently of how `djcdn` does it.
+
+You'd need to configure `compressor` to use CloudFront (or any other CDN).
+See http://stackoverflow.com/questions/8688815/django-compressor-how-to-write-to-s3-read-from-cloudfront
 
 ### What features are not supported (yet)?
 
@@ -413,7 +413,7 @@ There are a few ways to fix this for S3:
 1. Run a cron job to update the Expires header
    for the entire bucket once a year or so. 
 
-2. Set CDN_*_EXPIRY_AGE to a large value.
+2. Set `CDN_*_EXPIRY_AGE` to a large value.
 
 3.  Use CloudFront and map it to your S3 bucket. 
     Then you can set a large TTL (Time-to-live) value.
