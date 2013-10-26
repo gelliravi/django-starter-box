@@ -1,4 +1,4 @@
-# Django settings for djbase project.
+# Django settings for djdemo project.
 
 from os.path import abspath, basename, dirname, join, normpath
 from sys import path
@@ -123,10 +123,10 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'djbase.urls'
+ROOT_URLCONF = 'djdemo.urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'djbase.wsgi.application'
+WSGI_APPLICATION = 'djdemo.wsgi.application'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
@@ -149,6 +149,8 @@ INSTALLED_APPS = (
     'djajax',
     'djaccount',
     'djbase',
+    'djcdn',
+    'djdemo',
     
     # Uncomment the next line to enable the admin:
     # 'django.contrib.admin',
