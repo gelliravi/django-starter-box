@@ -46,6 +46,8 @@ DjCDN
 -----
 * Deploy dynamic media and user-uploaded files to Amazon S3.
 * Serve static and dynamic files over Amazon Cloudfront.
+* Auto-minify and gzip CSS and JavaScript files. 
+* Auto-compress PNG and JPEG images.
 * Auto-versioning of static files so that expiry dates can be set to max
   on Cloudfront.
 
@@ -209,11 +211,19 @@ STATIC_URL          = '//s3.amazonaws.com/%s/%s' % (AWS_STORAGE_BUCKET_NAME, CDN
 ADMIN_MEDIA_PREFIX  = STATIC_URL + 'admin/'
 ```
 
+`StaticStorage` will minify, gzip CSS and JavaScript files by default (customizable),
+and upload the resulting files to S3.  Minified files will have file names
+such as `xxx.min.css` or `xxx.min.js`. Gzipped versions are stored separately 
+from the minified versions and will have file names such as `xxx.min.gz.css`. 
+The file extension is preserved to enable correct MIME type detection.
+
+ It will also crush/compress PNG and JPEG images. The file names will be unchanged.
+
 If you want to serve static files from your servers, and have CloudFront
 distribute them, override the base settings with:
 
 ```python
-# Remove STATICFILES_STORAGE from above to use Django's default.
+# Remove STATICFILES_STORAGE from above to use Django's default filesystem storage.
 
 # collectstatic will put all collected files here. 
 # Remember to config your web server to serve static files from here as well.
@@ -262,11 +272,8 @@ optionally serving over CloudFront.
 
 3. `collectstatic` will first collect and then upload static files to your 
    S3 bucket in `CDN_STATIC_S3_PATH`. 
-   The `VersionedStaticStorage` will minify and gzip CSS and JavaScript files. Gzipped versions will be 
-   stored as separate copies to support browsers that do not have gzip capability. 
-   It will also crush/compress images.
-
-   Path will have an added version number.
+   `VersionedStaticStorage` differs from `StaticStorage` in that it will 
+   add a version string to the path.
    For example, a minified and gzipped CSS file will be at 
    "s3.amazonaws.com/<your-bucket>/static/<version>/css/main.min.gz.css"
 
