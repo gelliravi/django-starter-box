@@ -98,11 +98,14 @@ Internal dependency refers to internal modules within this project.
 |------|-------------
 `djajax`        | `djbase`
 `djaccount`     | `djbase`
+`djcdn`         | `djbase`
 
 DjAjax
 ======
 For extensive examples, refer to `djajax/tests/ajax.py`.
 
+Setting up
+-----------
 To install, modify `<project>/settings.py` and add to `INSTALLED_APPS`:
 ```python
 INSTALLED_APPS = (
@@ -143,10 +146,19 @@ def createAccount(request, name, email, password):
     return {'id': user_id}
 ```
 
-To use in JavaScript:
+How to use
+----------
+You would require `JSON.stringify` if your JavaScript framework
+does not have an equivalent function.
+
+Include the following somewhere to load JSON2 which is a polyfill
+for `JSON.stringify` and `JSON.parse`.
+```html
+<script src="//cdnjs.cloudflare.com/ajax/libs/json2/20121008/json2.min.js"></script>
+```
+
 ```javascript
-// jQuery:
-// JSON.stringify requires polyfill... see json.org
+// Using jQuery:
 $.ajax({
   url: "/ajax/createAccount",{
     type: 'POST',
@@ -181,6 +193,10 @@ Required settings
 -----------------
 Put the following base settings in `settings.py`.
 They will enable media and static files to be uploaded and served from S3.
+If you are serving static files directly from S3,
+you need to **ensure your S3 bucket is public by default**. Google
+on how to do this. If you're serving from CloudFront, we're not sure
+whether you need to do so. Experiment around.
 
 ```python
 INSTALLED_APPS = (
@@ -241,17 +257,15 @@ optionally serving over CloudFront.
 ### Setting up
 
 1. Sign up for S3 and CloudFront accounts. Map your CloudFront distribution
-   to your S3 bucket. If you are serving files directly from S3,
-   you need to **ensure your S3 bucket is public by default**. Google
-   on how to do this. If you're serving from CloudFront, we're not sure
-   whether you need to do so. Experiment around. 
+   to your S3 bucket.  
 
-2. Install and configure `djcdn` as per above, using the `VersionedStaticStorage` so
+2. Install and configure `djcdn` as per above, but use `VersionedStaticStorage` so
    `collectstatic` can upload all files to S3 with version info.
 
    ```python
    STATICFILES_STORAGE = 'djcdn.storage.s3.VersionedStaticStorage'
 
+   # Optionally, use CloudFront.
    # Remember to map your CloudFront distribution to your S3 bucket domain.
    STATIC_URL = '//<id>.cloudfront.net/%s' % CDN_STATIC_S3_PATH
    ```
