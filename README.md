@@ -284,60 +284,58 @@ optionally serving over CloudFront.
 2. Run `./manage.py collectstatic` as usual on your web server. If you have multiple
    load-balanced web servers, just choose any one with the static files.
 
-3. `collectstatic` will first collect and then upload static files to your 
-   S3 bucket in `CDN_STATIC_S3_PATH`. 
-   `VersionedStaticStorage` differs from `StaticStorage` in that it will 
-   add a version string to the path.
-   For example, a minified and gzipped CSS file will be at 
-   "s3.amazonaws.com/{your-bucket}/static/{version}/css/main.min.gz.css"
-
-4. Do a `./manage.py cdn_done` to mark the current version as completely uploaded.
+3. Do a `./manage.py cdn_done` to mark the current version as completely uploaded.
    If there is an error, DO NOT perform `cdn_done`. You should just simply retry step 3.
 
-5. **Not implemented yet** Clean up old versions in S3 by doing `./manage.py cdn_clean`. 
+4. **Not implemented yet** Clean up old versions in S3 by doing `./manage.py cdn_clean`. 
    Only the 3 most
    recent versions will be kept. (Just in case clients still use old versions
    if they don't refresh your web pages.)
 
-6. Restart your Django apps to reload new version info. 
+5. Restart your Django apps to reload new version info. 
    Generated HTML will then point to the new version of static files.
 
-7. Optional step: warm up the Cloudfront cache files by visiting your website.
+6. Optional step: warm up the Cloudfront cache files by visiting your website.
    Or you could use an automated tool to do so. This will cause Cloudfront
    to fetch the static files from your S3 bucket.
 
 ### How it works
 
-1. Your entire static files directory will be built first
-    using the Django's `collectstatic` commmand. It will use 
-    `VersionedStaticStorage` to 
-    minify, compress and gzip using your favorite tools such as `pngcrush` 
-    and then upload the resulting files to S3. 
+`djcdn` uses path versioning as
+the method of appending a query string doesn't seem to work on certain HTTP
+proxies. The entire static files directory is simply treated as a new version
+even if only some files have changed since the last version. This is for 
+simplicity. Versioning at the individual file level is too much work and complicated.
+Furthermore, you can clean up by simply discarding entire versioned directories.
+This shouldn't be a problem if your static files are at most several MBs big.
+(Storage is cheap.)
 
-2. It generates a unique version number such as
+1.  Django's `collectstatic` command will use `VersionedStaticStorage` to 
+    minify, compress and gzip static files using your favorite tools such 
+    as `pngcrush` and then upload the resulting files to S3. 
+
+2. `VersionedStaticStorage` differs from `StaticStorage` in that it will 
+    add a version string to the path.
+
+    It generates a unique version number such as
     `20131023-a4b5686` based on the current date. 
-    A new `CDNVersion` object will be inserted into the database but marked
-    as not done initially.
+
+    For example, a minified and gzipped CSS file will be at 
+    "s3.amazonaws.com/{your-bucket}/static/{version}/css/main.min.gz.css"   
+
+    To keep track of the new version, it inserts a `CDNVersion` object 
+    into the database (marked as not done initially).
   
-3. Once the upload is complete and error-free, use `cdn_done` to mark
-   the version as complete. This is needed as there is no way to know 
-   when `collectstatic` is done, other than to wrap `collectstatic` in a command.
-   In the future, we could implement a wrapper for `collectstatic` that 
-   auto-marks the upload as complete.
+3.  Once the upload is complete and error-free, use `cdn_done` to mark
+    the version as complete. This is needed as there is no way to know 
+    when `collectstatic` is done, other than to wrap `collectstatic` in a command.
+    In the future, we could implement a wrapper for `collectstatic` that 
+    auto-marks the upload as complete.
 
-4.  `djcdn` uses path versioning as
-    the method of appending a query string doesn't seem to work on certain HTTP
-    proxies. The entire static files directory is simply treated as a new version
-    even if only some files have changed since the last version. This is for 
-    simplicity. Versioning at the individual file level is too much work and complicated.
-    Furthermore, you can clean up by simply discarding entire versioned directories.
-    This shouldn't be a problem if your static files are at most several MBs big.
-    (Storage is cheap.)
-
-5. The `cdn` template tag gets the latest version info on app startup. 
-   It detects from the `HTTP_ACCEPT_ENCODING` header
-   whether the browser supports gzip encoding, and output the right path
-   accordingly.
+4.  The `cdn` template tag gets the latest version info on app startup. 
+    It detects from the `HTTP_ACCEPT_ENCODING` header
+    whether the browser supports gzip encoding, and output the right path
+    accordingly.
 
 ### Does it work with Django-compressor?
    Yes, because `django-compressor` works independently of `djcdn`.
