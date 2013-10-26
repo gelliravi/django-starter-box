@@ -85,7 +85,7 @@ External dependency refer to external module.
 |------|-------------
 `djbase`        | `dateutil`
 `djaccount`     | [`facebook-sdk`](https://github.com/pythonforfacebook/facebook-sdk) (python) >= 0.4.0
-`djcdn`         | [`django-storages`](http://code.larlet.fr/django-storages/) and its dependencies,  Amazon `boto` (AWS Python SDK)
+`djcdn`         | [`django-storages`](http://code.larlet.fr/django-storages/) and its dependencies,  Amazon `boto` (AWS Python SDK), [`cssmin`](https://github.com/zacharyvoase/cssmin), [`slimit`](https://github.com/rspivak/slimit.git)
 
 
 Internal Dependencies
@@ -177,10 +177,12 @@ DjCDN
 
 Required settings
 -----------------
-Put the following in `settings.py`:
+Put the following base settings in `settings.py`.
+They will enable media and static files to be uploaded and served from S3.
 
 ```python
 INSTALLED_APPS = (
+    'django.contrib.staticfiles',   # You must use Django's staticfiles
     ...,
     'djcdn',
     'djbase',
@@ -207,86 +209,60 @@ STATIC_URL          = '//s3.amazonaws.com/%s/%s' % (AWS_STORAGE_BUCKET_NAME, CDN
 ADMIN_MEDIA_PREFIX  = STATIC_URL + 'admin/'
 ```
 
-If you're using CloudFront, there is no real need to upload your static files 
-to S3. You could use these settings instead, to have your servers
-serve static files and have CloudFront distribute them.
+If you want to serve static files from your servers, and have CloudFront
+distribute them, override the base settings with:
 
 ```python
 # Remove STATICFILES_STORAGE from above to use Django's default.
 
-# Map your media CloudFront to <bucket-name>.s3.amazonaws.com
-MEDIA_URL           = '//<id>.cloudfront.net/%s' % CDN_DEFAULT_S3_PATH
-
+# collectstatic will put all collected files here. 
+# Remember to config your web server to serve static files from here as well.
 STATIC_ROOT         = '<path>/static/'  # Local file system path
 
 # Map your static CloudFront to <your-domain>.com
 STATIC_URL          = '//<id>.cloudfront.net/static/'
 ```
 
-More info on [`django-storage` S3 settings](http://django-storages.readthedocs.org/en/latest/backends/amazon-S3.html).
-
-Optional settings
------------------
-
-```python
-from datetime import datetime, timedelta
-
-# use this to get an expiry of 1 year
-def _get_aws_headers():
-    # locale independent... the GMT format should just be pure numbers.
-    days = ('Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun')
-    months = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
-              'Sep', 'Oct', 'Nov', 'Dec')
-
-    age = 3600 * 24 * 365  # 1 year in secs 
-
-    now = datetime.utcnow()
-    expires = now + timedelta(seconds=age)
-    expires_str = expires.strftime('%%s, %d %%s %Y %H:%M:%S GMT')
-    expires_str = expires_str % (days[expires.weekday()], months[expires.month-1])
-    headers = {
-        'Expires'       : expires_str,
-        'Cache-Control' : 'max-age=%s' % age, 
-    }
-
-    return headers
-
-AWS_HEADERS = _get_aws_headers()
-```
-
-Note that if you want your files to never expire, for example, media files
-that are never replaced once uploaded, it seems there is no way to have 
-a relative Expires header (or at least have AWS calculate the
-Expires header on the fly). You may want to try using only Cache-control
- and leave out the absolute Expires header.
- Another approach is to run a cron job to update the Expires header
- for the entire bucket once a year or so. 
-
 Auto-versioning of static files
 -------------------------------
+Here are the steps for deploying versioned static files to S3 and 
+optionally serving over CloudFront.
+
 ### Setting up
 
 1. Sign up for S3 and CloudFront accounts. Map your CloudFront distribution
-   to your S3 bucket.
+   to your S3 bucket. If you are serving files directly from S3,
+   you need to **ensure your S3 bucket is public by default**. Google
+   on how to do this. If you're serving from CloudFront, we're not sure
+   whether you need to do so. Experiment around. 
 
-2. Install and configure `djcdn`.
+2. Install and configure `djcdn` as per above, using the `VersionedStaticStorage` so
+   `collectstatic` can upload all files to S3 with version info.
 
-3. Use the `cdn` template tag instead of `staticfile`. 
-   For example, `{% cdn 'css/main.css' %}`
-   will output something like "//xxx.cloudfront.net/static/20131023-2334d/css/main.min.gz.css". The tag will auto-detect whether the browser supports gzip.
+   ```python
+   STATICFILES_STORAGE = 'djcdn.storage.s3.VersionedStaticStorage'
+
+   # Remember to map your CloudFront distribution to your S3 bucket domain.
+   STATIC_URL = '//<id>.cloudfront.net/%s' % CDN_STATIC_S3_PATH
+   ```
+
+3. Use the `cdn` template tag instead of `static`. 
+   For example, `{% cdn 'css/main.css'  %}`
+   will output something like "//xxx.cloudfront.net/static/20131023-2334d/css/main.min.gz.css". The tag will use `request` to auto-detect whether the browser supports gzip.
+
+   For media files, use `{% cdn 'photos/1.jpg' type='DEFAULT' %}`. 
+   Note that DEFAULT is case-sensitive.
 
 ## Workflow 
-Here's the workflow for deploying versioned static files to S3 and serving
-over CloudFront:
 
 1. Download static files to your production server(s).
 
-2. Run `./manage.py cdn_deploy` on your web server. If you have multiple
-   load-balanced web servers, just choose any one will do.
+2. Run `./manage.py collectstatic` as usual on your web server. If you have multiple
+   load-balanced web servers, just choose any one with the static files.
 
-3. `cdn_deploy` will first collect and then upload static files to your 
+3. `collectstatic` will first collect and then upload static files to your 
    S3 bucket in `CDN_STATIC_S3_PATH`. 
-   It will minify and gzip CSS and JavaScript files. Gzipped versions will be 
+   The `VersionedStaticStorage` will minify and gzip CSS and JavaScript files. Gzipped versions will be 
    stored as separate copies to support browsers that do not have gzip capability. 
    It will also crush/compress images.
 
@@ -294,28 +270,41 @@ over CloudFront:
    For example, a minified and gzipped CSS file will be at 
    "s3.amazonaws.com/<your-bucket>/static/<version>/css/main.min.gz.css"
 
+4. Do a `./manage.py cdn_done` to mark the current version as completely uploaded.
+   If there is an error, DO NOT perform `cdn_done`. You should just simply retry step 3.
 
-4. Clean up old versions in S3 and the local disk by doing `./manage.py cdn_clean`. 
+5. **Not implemented yet** Clean up old versions in S3 by doing `./manage.py cdn_clean`. 
    Only the 3 most
    recent versions will be kept. (Just in case clients still use old versions
    if they don't refresh your web pages.)
 
-5. Restart your Django apps to reload new version info. 
+6. Restart your Django apps to reload new version info. 
    Generated HTML will then point to the new version of static files.
 
-6. Optional step: warm up the Cloudfront cache files by visiting your website.
+7. Optional step: warm up the Cloudfront cache files by visiting your website.
    Or you could use an automated tool to do so. This will cause Cloudfront
    to fetch the static files from your S3 bucket.
 
 ### How it works
 
 1. Your entire static files directory will be built first
-    using the Django's `collectstatic` commmand. `cdn_deploy` will then 
+    using the Django's `collectstatic` commmand. It will use 
+    `VersionedStaticStorage` to 
     minify, compress and gzip using your favorite tools such as `pngcrush` 
     and then upload the resulting files to S3. 
 
 2. It generates a unique version number such as
-    `20131023-a4b5686` based on the current date. It uses path versioning as
+    `20131023-a4b5686` based on the current date. 
+    A new `CDNVersion` object will be inserted into the database but marked
+    as not done initially.
+  
+3. Once the upload is complete and error-free, use `cdn_done` to mark
+   the version as complete. This is needed as there is no way to know 
+   when `collectstatic` is done, other than to wrap `collectstatic` in a command.
+   In the future, we could implement a wrapper for `collectstatic` that 
+   auto-marks the upload as complete.
+
+4.  `djcdn` uses path versioning as
     the method of appending a query string doesn't seem to work on certain HTTP
     proxies. The entire static files directory is simply treated as a new version
     even if only some files have changed since the last version. This is for 
@@ -324,7 +313,8 @@ over CloudFront:
     This shouldn't be a problem if your static files are at most several MBs big.
     (Storage is cheap.)
 
-3. The `cdn` template tag detects from the `HTTP_ACCEPT_ENCODING` header
+5. The `cdn` template tag gets the latest version info on app startup. 
+   It detects from the `HTTP_ACCEPT_ENCODING` header
    whether the browser supports gzip encoding, and output the right path
    accordingly.
 
@@ -348,9 +338,8 @@ over CloudFront:
 
    If your servers are all connected to a common storage (networked disks),
    then you'd have to ensure the static files are stored there. And then you
-   could modify the code to skip uploading to S3.
+   could modify the code to store the files on the common storage.
    
-
 2. Compiling SASS, LESS, CoffeeScript and etc. files. 
 
 3. File-level versioning. This would involve crawling the entire static
@@ -360,4 +349,55 @@ over CloudFront:
    We don't see the need for this unless
    your static files are more than 10 MB?
 
+Optional settings
+-----------------
+More info on [`django-storage` S3 settings](http://django-storages.readthedocs.org/en/latest/backends/amazon-S3.html).
 
+You can customize the following `djcdn` specific settings:
+
+```python
+# Files types that will have gzip applied for static files.
+CDN_STATIC_COMPRESSED_TYPES     = ('css', 'js')  # Lowercase
+
+# Same but for media files
+CDN_DEFAULT_COMPRESSED_TYPES    = ()
+
+# List of filters to apply for each file type (lowercase)
+CDN_STATIC_FILTERS              = {
+    'css'   : ('filters.cssmin', 'filters.csspath'),
+    'js'    : ('filters.slimit',),
+    'png'   : ('filters.pngcrush',),
+    'jpg'   : ('filters.jpgcrush',),
+    'jpeg'  : ('filters.jpgcrush',),
+}
+
+# Same but for media files.
+CDN_DEFAULT_FILTERS              = {
+    # none
+}
+
+# Expiry age for static files. Will affect the HTTP headers stored in S3.
+# This will set the Cache-Control max-age. 
+# The Expires header will be calculated relative to current date and time.
+CDN_STATIC_EXPIRY_AGE      = 3600 * 24 * 365 # seconds
+
+CDN_DEFAULT_EXPIRY_AGE     = 3600 * 24 * 365 # seconds    
+```
+
+Note that if you want your files to never expire, for example, media files
+that are never replaced or versioned static files, it seems there is no way to have 
+a relative on-the-fly Expires header on S3. S3 just doesn't calculate Expires
+on-the-fly.
+
+There are a few ways to fix this for S3:
+
+1. Run a cron job to update the Expires header
+   for the entire bucket once a year or so. 
+
+2. Set CDN_*_EXPIRY_AGE to a large value.
+
+3.  Use CloudFront and map it to your S3 bucket. 
+    Then you can set a large TTL (Time-to-live) value.
+
+The third option is the easiest and safest, although that will cost 
+a little amount of money.
