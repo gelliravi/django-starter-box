@@ -66,13 +66,11 @@ class VersionedStorageTest(TransactionTestCase):
         self.factory = RequestFactory()
 
     def _check_upload(self, body_min, is_gzip):
-        if is_gzip:
-            request = self.factory.get('/')
-            request.META['HTTP_ACCEPT_ENCODING'] = 'gzip,deflate'
-        else:
-            request = None
+        request = self.factory.get('/')
+        request.META['HTTP_ACCEPT_ENCODING'] = 'gzip,deflate' if is_gzip else ''
+        context = {'request': request}
 
-        url = cdn.cdn(path='a.css', request=request, type='DEFAULT')
+        url = cdn.cdn(path='a.css', context=context, type='DEFAULT')
         self.assertTrue(url.startswith(settings.MEDIA_URL))
 
         request = urllib2.Request('http:'+url )
