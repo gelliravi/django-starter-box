@@ -58,6 +58,10 @@ class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
         return value 
 
     def get_prep_value(self, value):
+        # None is treated as null in database
+        if value is None:
+            return value 
+
         return pickle.dumps(value)
 
 class FixedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
@@ -81,8 +85,12 @@ class FixedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
         return self._parent.db_type(connection)
 
     def to_python(self, value):
-        # remove any space-padding in the value
-        return self._parent.to_python(value).strip()
+        value = self._parent.to_python(value)
+
+        if value is None:
+            return value 
+
+        return value.strip()
 
     def formfield(self, **kwargs):
         kwargs.setdefault('form_class', TrimmedCharField)
