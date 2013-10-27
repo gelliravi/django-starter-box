@@ -42,7 +42,14 @@ class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
         kwargs.setdefault('editable', False)
         
         # pickle the default value
+        # Shouldn't impose a max_length as we don't know how big the pickled
+        # value is going to be.
+        kwargs.pop('max_length', None)
+
         def_val = kwargs.get('default', None)
+            
+        if hasattr(def_val, '__call__'):
+            def_val = def_val()
         kwargs['default'] = pickle.dumps(def_val)
 
         super(PickleField, self).__init__(*args, **kwargs)
