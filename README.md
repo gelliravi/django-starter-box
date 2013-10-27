@@ -195,7 +195,8 @@ Required settings
 Put the following base settings in `settings.py`.
 They will enable media and static files to be uploaded and served from S3.
 If you are serving static files directly from S3,
-you need to **ensure your S3 bucket is public by default**. Google
+you need to **ensure your S3 bucket is public by default**, so that you
+don't have to explicitly make every file public. Google
 on how to do this. If you're serving from CloudFront, we're not sure
 whether you need to do so. Experiment around.
 
@@ -250,8 +251,39 @@ STATIC_ROOT         = '<path>/static/'  # Local file system path
 STATIC_URL          = '//<id>.cloudfront.net/static/'
 ```
 
+### Separate production and development settings
+
+For rapid development, you wouldn't want to have to keep pushing static
+files to S3 every time you make a change. For development, we
+recommend serving static files from local web servers (could be Django's runserver).
+Usually, on development, you directly serve static files from a specified 
+directory so that you don't even need to do `collectstatic`.
+
+```python
+# Remove STATICFILES_STORAGE from above to use Django's filesystem storage.
+
+# Directly serve static files from filesystem.
+STATICFILES_DIRS = (
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    '<path>/<to>/static',
+)
+
+# Everything else can be the same except for *_URL which will point to
+# local server.
+STATIC_URL  = STATIC_ROOT
+
+# For media files, you could use S3 (development version or not)
+# or the filesystem.
+# MEDIA_URL   = MEDIA_ROOT
+```
+
 Auto-versioning of static files
 -------------------------------
+This section is for production environment only, 
+as there is no point in versioning static files for development.
+
 Here are the steps for deploying versioned static files to S3 and 
 optionally serving over CloudFront.
 
@@ -289,8 +321,7 @@ optionally serving over CloudFront.
    If there is an error, DO NOT perform `cdn_done`. You should simply retry step 2.
 
 4. **Not implemented yet** Clean up old versions in S3 by doing `./manage.py cdn_clean`. 
-   In case clients still use old versions of your web pages, if they don't refresh,
-   the 3 most recent versions will be kept.
+   It will keep the 3 most recent versions, in case clients still use old versions of your web pages when they don't refresh.
 
 5. Restart your Django apps to reload new version info. 
    Generated HTML will then point to the new version of static files.
@@ -337,7 +368,9 @@ This shouldn't be a problem if your static files are at most several MBs big.
     whether the browser supports gzip encoding, and output the right path
     accordingly.
 
-### Does it work with Django-compressor?
+Does DjCDN work with Django-compressor?
+---------------------------------------
+
 Yes, because `django-compressor` works independently of `djcdn`.
 Good thing is that `compressor` also auto-versions each file it generates
 independently of how `djcdn` does it.
@@ -345,7 +378,8 @@ independently of how `djcdn` does it.
 You'd need to configure `compressor` to use CloudFront (or any other CDN).
 See http://stackoverflow.com/questions/8688815/django-compressor-how-to-write-to-s3-read-from-cloudfront
 
-### What features are not supported (yet)?
+What features are not supported (yet)?
+--------------------------------------
 
 1. Have CloudFront fetch versioned files from your servers instead of S3.
    To allow this, you'd need to run the compression and versioning process
@@ -370,9 +404,8 @@ See http://stackoverflow.com/questions/8688815/django-compressor-how-to-write-to
 
 Optional settings
 -----------------
-More info on [`django-storage` S3 settings](http://django-storages.readthedocs.org/en/latest/backends/amazon-S3.html).
-
-You can customize the following `djcdn` specific settings:
+The following `djcdn` specific settings are used by `DefaultStorage`, `StaticStorage` 
+and `VersionedStaticStorage`.
 
 ```python
 # Files types that will have gzip applied for static files.
@@ -420,3 +453,5 @@ There are a few ways to fix this for S3:
 
 The third option is the easiest and safest, although that will cost 
 a little amount of money.
+
+More info on [`django-storage` S3 settings](http://django-storages.readthedocs.org/en/latest/backends/amazon-S3.html).
