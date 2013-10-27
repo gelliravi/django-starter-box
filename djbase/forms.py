@@ -1,13 +1,13 @@
 from __future__ import unicode_literals
 
+from datetime import datetime
+
 from django import forms
 from django.forms import ValidationError
-from django.forms.widgets import TextInput, PasswordInput
 from django.utils.translation import ugettext_lazy as _l
+from django.utils import six
 
 from .utils import parse_iso_datetime
-
-from datetime import datetime
 
 class ISODateTimeField(forms.Field):
     """Input is either datetime objects or ISO formatted strings, and
@@ -28,7 +28,7 @@ class ISODateTimeField(forms.Field):
         if isinstance(value, datetime):
             return value
 
-        if isinstance(value, basestring):
+        if isinstance(value, six.text_type):
             value = value.strip()
 
             if value == '':
