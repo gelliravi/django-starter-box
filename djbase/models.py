@@ -29,19 +29,20 @@ class BaseModel(models.Model):
 # Subclass SubfieldBase to ensure to_python() is called everytime value is set.
 class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
     """Represents a field that stores any arbitrary Python object 
-    (except a string). If you want to store a string, use a regular TextField.
+    (except a string). 
 
     The Python object is serialized using Pickle and stored as ASCII.
-    DO NOT assign a string to this field. The reason being to_python()
+    DO NOT assign a string to this field. (A string inside a structure such as
+    tuple/list/dict is OK.) The reason is that to_python()
     is always called whenever a value is assigned, and since a pickled value
     is also a string, there is no way to distinguish between an unpickled
     string and a pickled value (except to try-catch any Pickle decoding error).
+    If you want to store a string, use a regular TextField.
     """
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('editable', False)
-        
-        # pickle the default value
+
         # Shouldn't impose a max_length as we don't know how big the pickled
         # value is going to be.
         kwargs.pop('max_length', None)
@@ -50,6 +51,9 @@ class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
             
         if hasattr(def_val, '__call__'):
             def_val = def_val()
+
+        # must pickle the default value as models.Field.get_default() will
+        # convert it into a string, resulting in a unpickling error.
         kwargs['default'] = pickle.dumps(def_val)
 
         super(PickleField, self).__init__(*args, **kwargs)
@@ -72,6 +76,14 @@ class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
         return pickle.dumps(value)
 
 class FixedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
+    """Represents a fixed-length char model field. 
+
+    In practice, it accepts any length up to max_length, 
+    but the underlying database column will be of fixed-length char type.
+    The database may pad the value, but this field will trim the value 
+    when retrieved from the database.
+    """
+
     description = _l('String (exactly %(max_length)s)')
 
     def __init__(self, max_length, *args, **kwargs):
