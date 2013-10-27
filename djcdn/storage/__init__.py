@@ -1,4 +1,9 @@
+from __future__ import unicode_literals
+
 from datetime import datetime, timedelta
+
+from django.core.files import File
+from django.core.files.base import ContentFile 
 
 from djcdn import filters as filters_mod
 
@@ -12,7 +17,7 @@ class Util(object):
     @classmethod
     def get_expiry_headers(cls, age):
         """
-        Get Expries and Cache-Control headers.
+        Get Expires and Cache-Control headers.
 
         :type   age: int 
         :param  age: Expiry age in seconds. 
@@ -35,13 +40,30 @@ class Util(object):
         return headers
 
     @classmethod
-    def apply_filters(cls, filters, content):
-        """
-        :type   content: str
+    def delete_file(cls, file):
+        if isinstance(file, ContentFile) or not file.name:
+            return 
 
-        :returns: str   
+        try:
+            file.delete()
+        except Exception as e:
+            print('Warning: Cannot delete temp file (Reason: %s): %s' 
+                % (e, file.name))
+
+    @classmethod
+    def apply_filters(cls, filters, input_file):
+        """
+        :type   input_file: File
+        :param  input_file: Will start reading at the current file position.
+
+        :returns: 
+            File -- may be the same as input_file. 
+            File position indeterminate.
         """
         
+        output_file = input_file
+        is_first = True 
+
         for filter in filters:
             if not filter.startswith('filters.'):
                 continue 
@@ -50,11 +72,19 @@ class Util(object):
             filter_fn = getattr(filters_mod, fn_name, None)
             
             if filter_fn is None:
-                raise Exception('filter function does not exist: %s' % fn_name)
+                raise Exception('filter function does not exist: %s' % filter)
 
-            content = filter_fn(content=content)
+            new_output_file = filter_fn(input_file=output_file)
 
-        return content
+            # Delete intermediate files
+            if (not is_first) and not(output_file is new_output_file):
+                output_file.close()
+                cls.delete_file(output_file)
+
+            is_first = False 
+            output_file = new_output_file
+
+        return output_file
 
     @classmethod 
     def can_minify(cls, file_ext):

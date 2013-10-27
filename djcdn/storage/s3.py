@@ -4,11 +4,6 @@ import os
 import sys
 import mimetypes
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO  
-
 from storages.backends.s3boto import S3BotoStorage
 from django.conf import settings
 from django.core.files import File
@@ -64,31 +59,10 @@ class AbstractStorage(S3BotoStorage):
     def _cdn_settings(self, name):
         return getattr(app_settings, 'CDN_%s_%s' % (self._cdn_type, name))
 
-    def _save(self, name, content):
-        orig_content = content 
-
-        file_name, file_ext = os.path.splitext(name)
-        file_ext = file_ext.lstrip('.')
+    def _cdn_save_gzip(self, file_name, file_ext, content):
         file_ext_lower = file_ext.lower()
-        
-        filters_map = self._cdn_settings('FILTERS')
-        filters = filters_map.get(file_ext_lower, None)
 
-        new_name =  name 
-
-        if filters:
-            content_raw = content.read()
-            content_raw = Util.apply_filters(filters=filters, content=content_raw)
-
-            file_name = Util.format_min_file_name(file_name, file_ext)
-            new_name = '%s.%s' % (file_name, file_ext)
-            content = File(StringIO(content_raw.encode('utf-8')))
-            content.name = new_name 
-            content.open('rb')
-
-        self._parent._save(name=new_name, content=content,)
-        
-        if file_ext in self._cdn_settings('COMPRESSED_TYPES'):
+        if file_ext_lower in self._cdn_settings('COMPRESSED_TYPES'):
             content.seek(0)
 
             # must preserve file ext!
@@ -96,7 +70,32 @@ class AbstractStorage(S3BotoStorage):
             gzip_name = '%s.%s' % (gzip_file_name, file_ext)
             self._cdn_gzip_storage._save(name=gzip_name, content=content,)
 
-        return new_name 
+    def _save(self, name, content):
+        file_name, file_ext = os.path.splitext(name)
+        file_ext = file_ext.lstrip('.')
+        file_ext_lower = file_ext.lower()
+        
+        filters_map = self._cdn_settings('FILTERS')
+        filters = filters_map.get(file_ext_lower, None)
+
+        if filters:
+            output_file = Util.apply_filters(filters=filters, input_file=content)
+
+            file_name = Util.format_min_file_name(file_name, file_ext)
+            new_name = '%s.%s' % (file_name, file_ext)
+            
+            new_name = self._parent._save(name=new_name, content=output_file,)
+            self._cdn_save_gzip(file_name=file_name, file_ext=file_ext, content=output_file)
+
+            if not(output_file is content):
+                output_file.close()
+                Util.delete_file(output_file)
+
+            return new_name 
+        else:
+            name = self._parent._save(name=name, content=content,)
+            self._cdn_save_gzip(file_name=file_name, file_ext=file_ext, content=content)
+            return name         
 
 class StaticStorage(AbstractStorage):
     """

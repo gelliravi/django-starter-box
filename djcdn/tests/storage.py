@@ -4,11 +4,11 @@ import uuid
 import urllib2
 import re
 import gzip
-from StringIO import StringIO
 from unittest import skipIf
 
 from django.conf import settings
 from django.core.files.storage import DefaultStorage
+from django.core.files.base import ContentFile
 from django.test import TransactionTestCase
 from django.test.client import RequestFactory, Client
 from django.test.utils import override_settings
@@ -70,7 +70,7 @@ class VersionedStorageTest(TransactionTestCase):
         request.META['HTTP_ACCEPT_ENCODING'] = 'gzip,deflate' if is_gzip else ''
         context = {'request': request}
 
-        url = cdn.cdn(path='a.css', context=context, type='DEFAULT')
+        url = cdn.cdn(path='folder/a.css', context=context, type='DEFAULT')
         self.assertTrue(url.startswith(settings.MEDIA_URL))
 
         request = urllib2.Request('http:'+url )
@@ -86,7 +86,7 @@ class VersionedStorageTest(TransactionTestCase):
 
         if is_gzip:
             self.assertTrue('gzip' in encoding)
-            buf = StringIO( response.read())
+            buf = ContentFile( response.read())
             f = gzip.GzipFile(fileobj=buf)
             ret_body = f.read()
             self.assertEqual(ret_body, body_min)
@@ -96,13 +96,15 @@ class VersionedStorageTest(TransactionTestCase):
             self.assertEqual(ret_body, body_min)
 
     def test_upload(self):
-        css_body = 'body   {        background: #fff;   }'
-        css_body_min = filters.cssmin(css_body)
+        # Test with some unicode characters
+        css_body = 'body   {        background: url("\u1234");  } '
+        css_output_file = filters.cssmin(ContentFile(css_body))
+        css_body_min = css_output_file.read()
 
-        self.assertFalse('   ' in css_body_min)
+        self.assertFalse(b'   ' in css_body_min)
 
         storage = DefaultStorage()
-        storage.save('a.css', StringIO(css_body))
+        storage.save('folder/a.css', ContentFile(css_body))
 
         self._check_upload(is_gzip=False, body_min=css_body_min)
         self._check_upload(is_gzip=True, body_min=css_body_min)
