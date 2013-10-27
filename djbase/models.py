@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _l
 from django.utils.six import with_metaclass
 from django.utils import six
 
-from .forms import FixedCharField as FixedCharFormField
+from .forms import TrimmedCharField
 
 # cPickle for speed
 try:
@@ -85,10 +85,9 @@ class FixedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
         return self._parent.to_python(value).strip()
 
     def formfield(self, **kwargs):
-        defaults = {'form_class': FixedCharFormField, 
-                    'max_length': self.max_length}
-        defaults.update(kwargs)
-        return self._parent.formfield(**defaults)
+        kwargs.setdefault('form_class', TrimmedCharField)
+        kwargs.setdefault('max_length', self.max_length)
+        return self._parent.formfield(**kwargs)
 
     # I guess this is necessary when there are custom args in the __init__
     # method.

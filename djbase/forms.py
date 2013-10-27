@@ -41,30 +41,11 @@ class ISODateTimeField(forms.Field):
 
         raise ValidationError(self.error_messages['invalid'], code='invalid')
 
-class FixedCharField(forms.CharField):
-    """
-    Fixed-length character field. Length is measured in terms of bytes,
-    specifically the number of bytes needed for the string's UTF-8 encoding.
+class TrimmedCharField(forms.CharField):
+    """A char field that trims all input.
     """
 
-    default_error_messages = {
-        'wrong_length': _l('Please ensure this value has exactly %(set_length)d characters (it has %(value_length)d).'),
-    }
-
-    def __init__(self, max_length, *args, **kwargs):
-        super(FixedCharField, self).__init__(max_length=max_length, min_length=max_length, *args, **kwargs)
-
-    def validate(self, value):
-        # we standardize to byte length.
-        value_length = len(value.encode('utf-8'))
-        if value_length != self.max_length:
-            raise ValidationError(self.error_messages['wrong_length'], code='wrong_length', params={'set_length': self.max_length, 'value_length': value_length})
-
-        return super(FixedCharField, self).validate(value)
-        
-    def widget_attrs(self, widget):
-        attrs = super(FixedCharField, self).widget_attrs(widget)
-        if isinstance(widget, (TextInput, PasswordInput)):
-            # The HTML attribute is maxlength, not max_length.
-            attrs.update({'maxlength': str(self.max_length)})
-        return attrs
+    def to_python(self, value):
+        # CharField always return a string, so we can safely call strip()
+        value = super(TrimmedCharField, self).to_python(value).strip()
+        return value 
