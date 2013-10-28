@@ -28,10 +28,10 @@ def cssmin(input_file):
     :returns: File 
     """
 
-    content_raw = input_file.read()
-    output_raw  = cssmin_mod.cssmin(content_raw)
+    content_bytes = input_file.read()
+    output_bytes  = cssmin_mod.cssmin(content_bytes)
 
-    return ContentFile(output_raw)
+    return ContentFile(output_bytes)
  
 def _transform_url(url, version_str=None):
     url = url.strip()
@@ -83,8 +83,8 @@ def slimit(input_file):
     :returns: File 
     """
     
-    content_raw = input_file.read()
-    output_raw  = slimit_mod.minify(content_raw, mangle=True, mangle_toplevel=False)
+    content_bytes = input_file.read()
+    output_bytes  = slimit_mod.minify(content_bytes, mangle=True, mangle_toplevel=False)
     
-    return ContentFile(output_raw)
+    return ContentFile(output_bytes)
     
