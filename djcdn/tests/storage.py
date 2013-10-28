@@ -61,7 +61,7 @@ else:
     CDN_DEFAULT_EXPIRY_AGE =  3600 * 24 * 365, # seconds
 )
 @skipIf(_skip, 'Please input AWS settings')
-class VersionedStorageTest(TransactionTestCase):
+class StorageTest(TransactionTestCase):
     def setUp(self):
         self.factory = RequestFactory()
 
@@ -85,7 +85,7 @@ class VersionedStorageTest(TransactionTestCase):
         self.assertTrue(re.match(r'\w{3}, \d{1,2} \w{3} \d{4} \d{2}:\d{2}:\d{2} GMT', expires))
 
         if is_gzip:
-            self.assertTrue('gzip' in encoding)
+            self.assertEqual('gzip', encoding)
             buf = ContentFile( response.read())
             f = gzip.GzipFile(fileobj=buf)
             ret_body = f.read()
@@ -95,7 +95,7 @@ class VersionedStorageTest(TransactionTestCase):
             ret_body = response.read()
             self.assertEqual(ret_body, body_min)
 
-    def test_upload(self):
+    def test_default(self):
         # Test with some unicode characters
         css_body = 'body   {        background: url("\u1234");  } '
         css_output_file = filters.cssmin(ContentFile(css_body))
@@ -108,4 +108,3 @@ class VersionedStorageTest(TransactionTestCase):
 
         self._check_upload(is_gzip=False, body_min=css_body_min)
         self._check_upload(is_gzip=True, body_min=css_body_min)
-
