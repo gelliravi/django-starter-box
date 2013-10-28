@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from datetime import datetime, timedelta
+import inspect
 
 from django.core.files import File
 from django.core.files.base import ContentFile 
@@ -50,8 +51,17 @@ class Util(object):
             print('Warning: Cannot delete temp file (Reason: %s): %s' 
                 % (e, file.name))
 
+    @classmethod 
+    def _call_filter(cls, filter_fn, input_file, version_str):
+        argspec = inspect.getargspec(filter_fn)
+
+        if 'version_str' in argspec.args:
+            return filter_fn(input_file=input_file, version_str=version_str)
+
+        return filter_fn(input_file=input_file)
+
     @classmethod
-    def apply_filters(cls, filters, input_file):
+    def apply_filters(cls, filters, input_file, version_str=None):
         """
         :type   input_file: File
         :param  input_file: Will start reading at the current file position.
@@ -74,7 +84,7 @@ class Util(object):
             if filter_fn is None:
                 raise Exception('filter function does not exist: %s' % filter)
 
-            new_output_file = filter_fn(input_file=output_file)
+            new_output_file = cls._call_filter(filter_fn, input_file=output_file, version_str=version_str)
 
             # Delete intermediate files
             if (not is_first) and not(output_file is new_output_file):

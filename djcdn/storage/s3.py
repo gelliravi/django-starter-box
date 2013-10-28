@@ -20,6 +20,7 @@ class AbstractStorage(S3BotoStorage):
     def __init__(self, cdn_type, *args, **kwargs):
         self._parent = super(AbstractStorage, self)
         self._cdn_type = cdn_type 
+        self._cdn_version_str = kwargs.pop('cdn_version_str', None)
 
         aws_headers = getattr(settings, 'AWS_HEADERS', {})
         headers = aws_headers.copy()
@@ -79,7 +80,7 @@ class AbstractStorage(S3BotoStorage):
         filters = filters_map.get(file_ext_lower, None)
 
         if filters:
-            output_file = Util.apply_filters(filters=filters, input_file=content)
+            output_file = Util.apply_filters(filters=filters, input_file=content, version_str=self._cdn_version_str)
 
             file_name = Util.format_min_file_name(file_name, file_ext)
             new_name = '%s.%s' % (file_name, file_ext)
@@ -121,12 +122,14 @@ class DefaultStorage(AbstractStorage):
 class VersionedStaticStorage(StaticStorage):
     def __init__(self, *args, **kwargs):
         if 'collectstatic' in sys.argv:
-            version_str = CDNVersion.objects.create_new().version_str + '/'
+            version_str = CDNVersion.objects.create_new().version_str 
+            extra = version_str + '/'
         else:
-            version_str = ''
+            version_str = None
+            extra = ''
 
-        location = settings.CDN_STATIC_S3_PATH + version_str
+        location = settings.CDN_STATIC_S3_PATH + extra
 
         self._parent = super(VersionedStaticStorage, self)
-        self._parent.__init__(*args, location=location, **kwargs)
+        self._parent.__init__(*args, location=location, cdn_version_str=version_str, **kwargs)
 
