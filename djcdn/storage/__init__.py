@@ -42,7 +42,7 @@ class Util(object):
 
     @classmethod
     def delete_file(cls, file):
-        if isinstance(file, ContentFile) or not file.name:
+        if isinstance(file, ContentFile) or not hasattr(file, 'delete') or not file.name:
             return 
 
         try:
