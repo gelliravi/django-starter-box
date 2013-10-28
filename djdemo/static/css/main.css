@@ -4,6 +4,6 @@
 
 body 
 {
-    background: #fff;
+    background: url('/static/img/bg.jpg') top left no-repeat;
 }
 
