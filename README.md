@@ -436,6 +436,10 @@ CDN_STATIC_EXPIRY_AGE      = 3600 * 24 * 365 # seconds
 CDN_DEFAULT_EXPIRY_AGE     = 3600 * 24 * 365 # seconds    
 ```
 
+`filter.csspath` rewrites `url(...)` and `@import ...`. It works
+by replacing `STATIC_ROOT` at the front of the URL with `STATIC_URL`. 
+For example, `/static/img/icon.png` is rewritten to `//{id}.cloudfront.net/static/20131023-133acbde/img/icon.png`.
+
 Note that if you want your files to never expire, for example, media files
 that are never replaced or versioned static files, it seems there is no way to have 
 a relative on-the-fly Expires header on S3. S3 just doesn't calculate Expires
