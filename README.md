@@ -70,8 +70,8 @@ You can do a `git clone` followed by a `./manage.py test` to quickly test
 whether the apps work with your versions. You also need SQLite and its Python connector
 if you want to do a `./manage.py test`.
 
-| Name | Version  | Tested only with 
-|------|----------|-----------------
+| Name   | Version  | Tested only with 
+|--------|----------|-----------------
 Python   | >= 2.7   | 2.7.3
 Django   | >= 1.5.1 | 1.5.1
 sqlite   | whatever Django supports | -
@@ -83,20 +83,26 @@ External Dependencies
 =====================
 External dependency refer to external module.
 
+You might be able to use a lower version. Just run the tests to see if they work.
 
-| App  | Dependencies
-|------|-------------
-`djbase`        | `dateutil`
-`djaccount`     | [`facebook-sdk`](https://github.com/pythonforfacebook/facebook-sdk) (python) >= 0.4.0
-`djcdn`         | [`django-storages`](http://code.larlet.fr/django-storages/) and its dependencies,  Amazon `boto` (AWS Python SDK), [`cssmin`](https://github.com/zacharyvoase/cssmin), [`slimit`](https://github.com/rspivak/slimit.git)
+| App           | Dependencies| Tested only with
+|---------------|-------------|-----------------
+`djbase`        | `dateutil`  |
+`djaccount`     | [`facebook-sdk`](https://github.com/pythonforfacebook/facebook-sdk) (python) | 0.4.0
+`djcdn`         | [`django-storages`](http://code.larlet.fr/django-storages/) and its dependencies    | 1.1.8
+                | `boto` (AWS Python SDK) |  2.9.7
+                | [`cssmin`](https://github.com/zacharyvoase/cssmin)  | 0.2.0
+                | [`slimit`](https://github.com/rspivak/slimit.git)   | 0.8.0
+                | `jpegoptim` (only if you're compressing JPEG files) |
+                | `pngcrush` (only if you're compressing PNG files)   |
 
 
 Internal Dependencies
 =====================
 Internal dependency refers to internal modules within this project.
 
-| App  | Dependencies
-|------|-------------
+| App           | Dependencies
+|---------------|-------------
 `djajax`        | `djbase`
 `djaccount`     | `djbase`
 `djcdn`         | `djbase`
@@ -418,9 +424,9 @@ CDN_DEFAULT_COMPRESSED_TYPES    = ()
 CDN_STATIC_FILTERS              = {
     'css'   : ('filters.cssmin', 'filters.csspath'),
     'js'    : ('filters.slimit',),
-    'png'   : ('filters.pngcrush',),
-    'jpg'   : ('filters.jpgcrush',),
-    'jpeg'  : ('filters.jpgcrush',),
+    'png'   : ('filters.pngcrush',),  # Remove if you don't want to compress PNG
+    'jpg'   : ('filters.jpegoptim',), # Remove if you don't want to compress JPEG
+    'jpeg'  : ('filters.jpegoptim',),
 }
 
 # Same but for media files.
