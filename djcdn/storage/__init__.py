@@ -2,6 +2,8 @@ from __future__ import unicode_literals
 
 from datetime import datetime, timedelta
 import inspect
+import os
+import os.path
 
 from django.core.files import File
 from django.core.files.base import ContentFile 
@@ -42,14 +44,22 @@ class Util(object):
 
     @classmethod
     def delete_file(cls, file):
-        if isinstance(file, ContentFile) or not hasattr(file, 'delete') or not file.name:
+        if isinstance(file, ContentFile):
+            return 
+
+        inner_file = getattr(file, 'file', None)
+        if not inner_file:
+            inner_file = file 
+
+        inner_file_path = getattr(inner_file, 'name', None)
+        if not inner_file_path or not os.path.isfile(inner_file_path):
             return 
 
         try:
-            file.delete()
+            os.unlink(inner_file_path)
         except Exception as e:
             print('Warning: Cannot delete temp file (Reason: %s): %s' 
-                % (e, file.name))
+                % (e, inner_file_path))
 
     @classmethod 
     def _call_filter(cls, filter_fn, input_file, version_str):
