@@ -11,8 +11,8 @@ class _Settings(object):
             'css'   : ('filters.cssmin', 'filters.csspath'),
             'js'    : ('filters.slimit',),
             'png'   : ('filters.pngcrush',),
-            'jpg'   : ('filters.jpgcrush',),
-            'jpeg'  : ('filters.jpgcrush',),
+            'jpg'   : ('filters.jpegoptim',),
+            'jpeg'  : ('filters.jpegoptim',),
         },
         'CDN_DEFAULT_FILTERS'               : {
             # none
