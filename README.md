@@ -152,6 +152,17 @@ def createAccount(request, name, email, password):
     return {'id': user_id}
 ```
 
+To use forms for params validation:
+```python
+class PostForm(forms.Form):
+    param1  = ISODateTimeField(required=False)
+    param2  = forms.CharField(max_length=5, required=True)
+
+@ajax(method='POST', form=PostForm)
+def post_with_form_params(request, param1, param2):
+    ...
+```
+
 How to use
 ----------
 You would require `JSON.stringify` if your JavaScript framework
@@ -366,6 +377,8 @@ What features are not supported (yet)?
    We don't see the need for this unless
    your static files are more than 10 MB?
 
+4. Custom processing filters. For e.g., add a watermark to images?
+
 Optional settings
 -----------------
 The following `djcdn` specific settings are used by `DefaultStorage`, `StaticStorage` 
@@ -430,6 +443,7 @@ Other use cases
 If you want to serve static files from your servers, and have CloudFront
 distribute them, override the base settings with: (**Note that
 this method does not minify and gzip nor version the static files**)
+** This also does not use djcdn's functionalities **
 
 ```python
 # use Django's default filesystem storage.
