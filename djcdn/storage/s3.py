@@ -30,6 +30,11 @@ class AbstractStorage(S3BotoStorage):
             expiry_headers = Util.get_expiry_headers(age=age)
             headers.update(expiry_headers)
 
+        for key, val in headers.items():
+            # need to encode into bytes, otherwise boto will url encode
+            # the header value (see boto/connection.py/HTTPRequest/authorize)
+            headers[key] = val.encode('utf8')
+
         gzip_types = list(getattr(settings, 'GZIP_CONTENT_TYPES', ()))
         com_types = self._cdn_settings('COMPRESSED_TYPES')
         for type in com_types:
