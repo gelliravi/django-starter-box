@@ -1,7 +1,7 @@
 django-bootstrap
 ================
 
-Django + Bootstrap + Angular.js. A great way to kickstart your next app. Coming soon.
+A great way to kickstart your next app. 
 
 Goals
 -----
@@ -81,20 +81,19 @@ although I might have missed something out. Feel free to open issues on this.
 
 External Dependencies
 =====================
-External dependency refer to external module.
-
-You might be able to use a lower version. Just run the tests to see if they work.
+You might be able to use a lower version for some of the dependencies. 
+Just run the tests to see if they work.
 
 | App           | Dependencies| Tested only with
 |---------------|-------------|-----------------
-`djbase`        | `dateutil`  |
+`djbase`        | [`dateutil`](https://pypi.python.org/pypi/python-dateutil)  | 2.1
 `djaccount`     | [`facebook-sdk`](https://github.com/pythonforfacebook/facebook-sdk) (python) | 0.4.0
-`djcdn`         | [`django-storages`](http://code.larlet.fr/django-storages/) and its dependencies    | 1.1.8
-                | `boto` (AWS Python SDK) |  2.9.7
-                | [`cssmin`](https://github.com/zacharyvoase/cssmin)  | 0.2.0
-                | [`slimit`](https://github.com/rspivak/slimit.git)   | 0.8.0
-                | `jpegoptim` (only if you're compressing JPEG files) |
-                | `pngcrush` (only if you're compressing PNG files)   |
+`djcdn`         | [`django-storages`](http://code.larlet.fr/django-storages/) | 1.1.8
+                | [`boto`](https://github.com/boto/boto) (AWS Python SDK) |  2.9.7
+                | [`cssmin`](https://github.com/zacharyvoase/cssmin) (CSS Minifier)  | 0.2.0
+                | [`slimit`](https://github.com/rspivak/slimit.git) (JS Minifier)  | 0.8.0
+                | `jpegoptim` (optional, for compressing JPEG files) |
+                | `pngcrush` (optional, for compressing PNG files)   |
 
 
 Internal Dependencies
@@ -219,7 +218,7 @@ INSTALLED_APPS = (
 CDN_STATIC_S3_PATH      = "static/" # You may change this. Ends with slash
 CDN_DEFAULT_S3_PATH     = "media/"  # You may change this. Ends with slash
 
-# Django-storage settings
+# django-storages settings
 AWS_ACCESS_KEY_ID       = {{ your key id here }}
 AWS_SECRET_ACCESS_KEY   = {{ your secret key here }}
 AWS_STORAGE_BUCKET_NAME = {{ your bucket name here }}
@@ -242,48 +241,7 @@ from the minified versions and will have file names such as `xxx.min.gz.css`.
 The file extension is preserved to enable correct MIME type detection.
 
  It will also crush/compress PNG and JPEG images. The file names will be unchanged.
-
-If you want to serve static files from your servers, and have CloudFront
-distribute them, override the base settings with:
-
-```python
-# Remove STATICFILES_STORAGE from above to use Django's default filesystem storage.
-
-# collectstatic will put all collected files here. 
-# Remember to config your web server to serve static files from here as well.
-STATIC_ROOT         = '<path>/static/'  # Local file system path
-
-# Map your static CloudFront to <your-domain>.com
-STATIC_URL          = '//<id>.cloudfront.net/static/'
-```
-
-### Separate production and development settings
-
-For rapid development, you wouldn't want to have to keep pushing static
-files to S3 every time you make a change. For development, we
-recommend serving static files from local web servers (could be Django's runserver).
-Usually, on development, you directly serve static files from a specified 
-directory so that you don't even need to do `collectstatic`.
-
-```python
-# Remove STATICFILES_STORAGE from above to use Django's filesystem storage.
-
-# Directly serve static files from filesystem.
-STATICFILES_DIRS = (
-    # Put strings here, like "/home/html/static" or "C:/www/django/static".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    '<path>/<to>/static',
-)
-
-# Everything else can be the same except for *_URL which will point to
-# local server.
-STATIC_URL  = STATIC_ROOT
-
-# For media files, you could use S3 (development version or not)
-# or the filesystem.
-# MEDIA_URL   = MEDIA_ROOT
-```
+ Original files will be left untouched.
 
 Auto-versioning of static files
 -------------------------------
@@ -465,3 +423,51 @@ The third option is the easiest and safest, although that will cost
 a little amount of money.
 
 More info on [`django-storage` S3 settings](http://django-storages.readthedocs.org/en/latest/backends/amazon-S3.html).
+
+Other use cases
+---------------
+
+If you want to serve static files from your servers, and have CloudFront
+distribute them, override the base settings with: (**Note that
+this method does not minify and gzip nor version the static files**)
+
+```python
+# use Django's default filesystem storage.
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+# collectstatic will put all collected files here. 
+# Remember to config your web server to serve static files from here as well.
+STATIC_ROOT         = '<path>/static/'  # Local file system path
+
+# Map your CloudFront distribution to <your-domain>.com
+STATIC_URL          = '//<id>.cloudfront.net/static/'
+```
+
+### Recommended development settings
+
+For rapid development, you wouldn't want to keep pushing static
+files to S3 every time you make a change. 
+
+For development, we
+recommend serving static files from local web servers (could be Django's runserver).
+Usually, on development, you directly serve static files from a specified 
+directory so that you don't even need to do `collectstatic`.
+
+When `django.contrib.staticfiles` is in your `INSTALLED_APPS`, and `DEBUG` is
+`True`, `runserver` will auto serve static files for you.
+See https://docs.djangoproject.com/en/dev/howto/static-files/#configuring-static-files
+
+```python
+# This is a list of places the staticfiles finder go to.
+STATICFILES_DIRS = (
+    # Put strings here, like "/home/html/static" or "C:/www/django/static".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    '<path>/<to>/static',
+)
+
+STATIC_URL  = '/static/'
+
+# For media files, you could use S3 (development version or not)
+# or the filesystem.
+```
