@@ -1,5 +1,5 @@
-django-bootstrap
-================
+django-starter-box
+==================
 
 A great way to kickstart your next app. 
 
