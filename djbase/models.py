@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _l
 from django.utils.six import with_metaclass
 from django.utils import six
 
-from .forms import TrimmedCharField
+from . import forms
 
 # cPickle for speed
 try:
@@ -75,6 +75,40 @@ class PickleField(with_metaclass(models.SubfieldBase, models.TextField)):
 
         return pickle.dumps(value)
 
+class TrimmedTextField(with_metaclass(models.SubfieldBase, models.TextField)):
+    """ Exactly the same as models.TextField, except that it trims the input.
+    """
+
+    def to_python(self, value):
+        value = self._parent.to_python(value)
+
+        if value is None:
+            return value 
+
+        return value.strip()
+
+    def formfield(self, **kwargs):
+        kwargs.setdefault('form_class', forms.TrimmedTextField)
+        kwargs.setdefault('max_length', self.max_length)
+        return self._parent.formfield(**kwargs)
+
+class TrimmedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
+    """ Exactly the same as models.CharField, except that it trims the input.
+    """
+
+    def to_python(self, value):
+        value = self._parent.to_python(value)
+
+        if value is None:
+            return value 
+
+        return value.strip()
+
+    def formfield(self, **kwargs):
+        kwargs.setdefault('form_class', forms.TrimmedCharField)
+        kwargs.setdefault('max_length', self.max_length)
+        return self._parent.formfield(**kwargs)
+
 class FixedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
     """Represents a fixed-length char model field. 
 
@@ -112,7 +146,7 @@ class FixedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
         return value.strip()
 
     def formfield(self, **kwargs):
-        kwargs.setdefault('form_class', TrimmedCharField)
+        kwargs.setdefault('form_class', forms.TrimmedCharField)
         kwargs.setdefault('max_length', self.max_length)
         return self._parent.formfield(**kwargs)
 
@@ -136,5 +170,7 @@ try:
 except ImportError:
     pass
 else:
+    add_introspection_rules([], [r"^djbase\.models\.TrimmedTextField"])
+    add_introspection_rules([], [r"^djbase\.models\.TrimmedCharField"])
     add_introspection_rules([], [r"^djbase\.models\.FixedCharField"])
     add_introspection_rules([], [r"^djbase\.models\.PickleField"])

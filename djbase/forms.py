@@ -41,8 +41,17 @@ class ISODateTimeField(forms.Field):
 
         raise ValidationError(self.error_messages['invalid'], code='invalid')
 
+class TrimmedTextField(forms.TextField):
+    """Exactly the same as forms.TextField except that it trims its input.
+    """
+
+    def to_python(self, value):
+        # TextField always return a string, so we can safely call strip()
+        value = super(TrimmedTextField, self).to_python(value).strip()
+        return value 
+
 class TrimmedCharField(forms.CharField):
-    """A char field that trims all input.
+    """Exactly the same as forms.CharField except that it trims its input.
     """
 
     def to_python(self, value):
