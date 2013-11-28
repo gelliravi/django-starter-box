@@ -79,6 +79,10 @@ class TrimmedTextField(with_metaclass(models.SubfieldBase, models.TextField)):
     """ Exactly the same as models.TextField, except that it trims the input.
     """
 
+    def __init__(self, *args, **kwargs):
+        self._parent = super(TrimmedTextField, self)
+        self._parent.__init__(*args, **kwargs)
+
     def to_python(self, value):
         value = self._parent.to_python(value)
 
@@ -95,6 +99,10 @@ class TrimmedTextField(with_metaclass(models.SubfieldBase, models.TextField)):
 class TrimmedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
     """ Exactly the same as models.CharField, except that it trims the input.
     """
+    
+    def __init__(self, *args, **kwargs):
+        self._parent = super(TrimmedCharField, self)
+        self._parent.__init__(*args, **kwargs)
 
     def to_python(self, value):
         value = self._parent.to_python(value)
