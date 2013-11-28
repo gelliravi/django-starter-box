@@ -92,7 +92,7 @@ class TrimmedTextField(with_metaclass(models.SubfieldBase, models.TextField)):
         return value.strip()
 
     def formfield(self, **kwargs):
-        kwargs.setdefault('form_class', forms.TrimmedTextField)
+        kwargs.setdefault('form_class', forms.TrimmedCharField)
         kwargs.setdefault('max_length', self.max_length)
         return self._parent.formfield(**kwargs)
 
