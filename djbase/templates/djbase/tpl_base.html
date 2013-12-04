@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html  
   id="ng-app" 
-  ng-app="{% block page_mod %}app.base{% endblock %}"
+  ng-app="{% block page_angular_mod %}app.base{% endblock %}"
   xmlns:fb="http://ogp.me/ns/fb#"
   prefix="og: http://ogp.me/ns#">
 <head>
@@ -11,9 +11,12 @@
   <title>{% block page_title %}{% endblock %}</title>
   <meta name="description" content="{% block page_desc %}{% endblock %}">
   <meta name="viewport" content="initial-scale=1.0">
+  <meta property="og:type" content="{% block page_og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block page_og_title %}{% endblock %}">
+  <meta property="og:url" content="{% block page_og_url %}{% endblock %}">
+  <meta property="og:image" content="{% block page_og_image %}{% endblock %}">
 
   {% block page_meta %}{% endblock %}
-  {% block page_meta_og %}{% endblock %}
 
   {% comment %}
   You might want to include these:
