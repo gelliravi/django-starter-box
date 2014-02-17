@@ -4,7 +4,7 @@ from datetime import datetime
 
 from django import forms
 from django.forms import ValidationError
-from django.utils.translation import ugettext_lazy as _l
+from django.utils.translation import ugettext_lazy as _
 from django.utils import six
 
 from .utils import parse_iso_datetime
@@ -18,7 +18,7 @@ class ISODateTimeField(forms.Field):
     """
 
     default_error_messages = {
-        'invalid': _l('Invalid ISO date')
+        'invalid': _('Invalid ISO date')
     }
 
     def to_python(self, value):

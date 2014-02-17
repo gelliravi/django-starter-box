@@ -3,7 +3,7 @@ from __future__ import unicode_literals
 from django.db import IntegrityError, models, DatabaseError
 from django.conf import settings
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
-from django.utils.translation import pgettext_lazy as _pl, ugettext_lazy as _l
+from django.utils.translation import ugettext_lazy as _
 from djbase.models import FixedCharField, BaseModel
 from djbase.utils.mock import is_test 
 
@@ -31,8 +31,8 @@ class AbstractAccount(AbstractBaseUser, PermissionsMixin, BaseModel):
     FEMALE      = 'f'
 
     GENDER_CHOICES  = (
-        (MALE,           _l('Male')),
-        (FEMALE,         _l('Female')),
+        (MALE,           _('Male')),
+        (FEMALE,         _('Female')),
     )
 
     INVALID_TIMEZONE = 32000

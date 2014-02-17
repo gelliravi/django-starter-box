@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 from django.db import models
-from django.utils.translation import ugettext_lazy as _l
+from django.utils.translation import ugettext_lazy as _
 
 # for Python 2 & 3 compat
 from django.utils.six import with_metaclass
@@ -126,7 +126,7 @@ class FixedCharField(with_metaclass(models.SubfieldBase, models.CharField)):
     when retrieved from the database.
     """
 
-    description = _l('String (exactly %(max_length)s)')
+    description = _('String (exactly %(max_length)s)')
 
     def __init__(self, max_length, *args, **kwargs):
         self._parent = super(FixedCharField, self)

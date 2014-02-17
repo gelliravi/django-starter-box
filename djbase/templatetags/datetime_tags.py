@@ -1,11 +1,11 @@
 import datetime
 
 from django import template, forms
-from django.utils.translation import ugettext_lazy as _l
+from django.utils.translation import ugettext_lazy as _
 
 register = template.Library()
 
-_DAYS = [_l('Mon'), _l('Tue'), _l('Wed'), _l('Thu'), _l('Fri'), _l('Sat'), _l('Sun')]
+_DAYS = [_('Mon'), _('Tue'), _('Wed'), _('Thu'), _('Fri'), _('Sat'), _('Sun')]
 
 @register.filter
 def day_of_week(value):

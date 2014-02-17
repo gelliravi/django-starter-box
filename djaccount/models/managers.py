@@ -10,7 +10,6 @@ from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.conf import settings
 from django.utils import timezone
-from django.utils.translation import pgettext_lazy as _pl, ugettext_lazy as _l
 
 from djaccount.exceptions import *
 from djaccount.conf import settings as app_settings
