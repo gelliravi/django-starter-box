@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import json
+
 from django.utils import timezone
 from django.utils.translation import ugettext as _
 from django.test import TestCase
@@ -7,6 +9,7 @@ from djbase.utils import parse_iso_datetime
 from djbase.utils.json import encode as json_encode
 
 from datetime import datetime, date
+
 
 class JSONTest(TestCase):
     class SimpleObject(object):
@@ -24,10 +27,21 @@ class JSONTest(TestCase):
 
         for test in data:
             test_input      = test[0]
-            test_expected   = test[1] 
+            test_expected   = test[1]
 
             output = json_encode(test_input)
             self.assertEqual(output, test_expected)
+
+    def test_html_safe(self):
+        input = {"<script>": "&amp; </script>"}
+        encoded = json_encode(input)
+        self.assertFalse("<" in encoded)
+        self.assertFalse(">" in encoded)
+        self.assertFalse("&" in encoded)
+
+        output = json.loads(encoded)
+        self.assertEqual(input, output)
+
 
 class UtilsTest(TestCase):
     def test_parse_iso_datetime(self):
@@ -38,7 +52,7 @@ class UtilsTest(TestCase):
 
         for test in data:
             test_input      = test[0]
-            test_expected   = test[1] 
+            test_expected   = test[1]
 
             output = parse_iso_datetime(test_input)
             self.assertEqual(output, test_expected)
